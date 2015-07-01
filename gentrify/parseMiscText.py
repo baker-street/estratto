@@ -1,10 +1,10 @@
-__title__ = 'ellis_island'
+__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
 
 
-import bs4
+# import bs4
 from bs4 import BeautifulSoup
 
 import logging

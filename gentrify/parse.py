@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__title__ = 'ellis_island'
+__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/23/2015'
@@ -18,15 +18,15 @@ from gentrify.parseEmail import(is_an_email,
 
 # from gentrify.parseEmail import email_whole_parse
 
-OKEXT = set([u'.doc',
-             u'.docx',
-             u'.pdf',
-             u'.txt',
-             u'.html',
-             u'.htm',
-             u'.eml',
-             u'.rtf',
-             ])
+OKEXT = {u'.doc',
+         u'.docx',
+         u'.pdf',
+         u'.txt',
+         u'.html',
+         u'.htm',
+         u'.eml',
+         u'.rtf',
+         }
 
 
 def fit_into_data_mold(parsedtxt, txt, uri, ftype, mime, info):

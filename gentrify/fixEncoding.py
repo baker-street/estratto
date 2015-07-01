@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__title__ = 'ellis_island'
+__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'

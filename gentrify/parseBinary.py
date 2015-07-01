@@ -1,5 +1,5 @@
 # -*- coding: utf-8 -*-
-__title__ = 'ellis_island'
+__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
@@ -9,7 +9,7 @@ from subprocess import Popen, PIPE
 
 from docx import Document
 # from xlrd import XLRDError
-# import pandas
+import pandas
 import zipfile
 
 from textract import process
@@ -84,11 +84,11 @@ def auto_textract(filepath):
         return u''
 
 
-# def pandas_print_full(x):
-#     pandas.set_option('display.max_rows', len(x))
-#     g = unicode(x)
-#     pandas.reset_option('display.max_rows')
-#     return g
+def pandas_print_full(x):
+    pandas.set_option('display.max_rows', len(x))
+    g = unicode(x)
+    pandas.reset_option('display.max_rows')
+    return g
 
 
 def convert_pdf_to_txt(path):
