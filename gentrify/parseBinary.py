@@ -193,6 +193,8 @@ def extract_text(filename):
             return u''
         elif len(re.findall('\\x00', txt)) > 10:
             return u''
+        elif not bool(txt.split()):
+            return u''
         else:
             return txt
     else:
@@ -205,6 +207,9 @@ def parse_binary(fname, extset=OKEXT):
     else:
         return {u'body': auto_unicode_dang_it(extract_text(fname)),
                 }
+
+EXTWARN = """Guessed ext does not match the provided ext.\tguess:{gext}\
+\text:{ext}\tfname:{fname}"""
 
 
 def parse_binary_from_string(fdata, fname=u'', suffix=u''):
@@ -221,8 +226,8 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
     except KeyError:
         return {u'body': u''}
 
-    if extbymime != suffix:
-        LOG.error('Guessed ext does not match the provided ext.')
+    if extbymime.lower() != suffix.lower():
+        LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
 
     with NamedTemporaryFile(suffix=extbymime) as tmp:
         tmp.file.write(fdata)
