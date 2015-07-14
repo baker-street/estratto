@@ -12,7 +12,8 @@ except ImportError:
 import unicodedata
 from unidecode import unidecode
 from ftfy import ftfy
-
+from ftfy import fix_text
+from ftfy.fixes import remove_control_chars, remove_unsafe_private_use
 
 import logging
 LOG = logging.getLogger(__name__)
@@ -20,6 +21,13 @@ LOG = logging.getLogger(__name__)
 
 # ----------------------------------------------------------------------------
 # Cleaning up text.
+def render_safe(text):
+    '''
+    Make sure the given text is safe to pass to an external process.
+    '''
+    return remove_control_chars(remove_unsafe_private_use(text))
+
+
 def sane_unicode_bom(bytes_, errors='replace', returnencoding=False):
     """
     Convert a byte string into Unicode.
@@ -52,22 +60,23 @@ def sane_unicode(bytes_, encoding='utf-8', errors='replace',
     using chardet.
     """
     if isinstance(bytes_, unicode):
-        return bytes_
-
-    try:
-        unitext = bytes_.decode(encoding)
-    except(UnicodeDecodeError, LookupError):
-        detection = chardet.detect(bytes_)
-        encoding = detection.get('encoding')
-        unitext = unicode(bytes_, encoding, errors=errors)
-
+        unitext = bytes_
+        encoding = 'unicode'
+    else:
+        try:
+            unitext = bytes_.decode(encoding)
+        except(UnicodeDecodeError, LookupError):
+            detection = chardet.detect(bytes_)
+            encoding = detection.get('encoding')
+            unitext = unicode(bytes_, encoding, errors=errors)
+    unitext = render_safe(fix_text(unitext))
     if returnencoding:
         return unitext, encoding
     else:
         return unitext
 
 
-def insane_unicode(bytes_, *args):
+def insane_unicode(bytes_):  # , *args):
     """
     return the unicode representation of string.
     !! Use as last resort!!
@@ -75,12 +84,12 @@ def insane_unicode(bytes_, *args):
     if isinstance(bytes_, unicode):
         return bytes_
     try:
-        return unicode(bytes_, *args)
+        return sane_unicode(bytes_)
     except UnicodeDecodeError:
         # obj is byte string
         ascii_text = str(bytes_).encode('string_escape')
         try:
-            return sane_unicode(ascii_text)
+            return render_safe(fix_text(sane_unicode(ascii_text)))
         except UnicodeDecodeError:
             return insane_unicode(ascii_text)
 
@@ -90,13 +99,12 @@ def insane_str(obj, encoding='utf-8'):
     Return the byte string representation of string.
     !! Use as last resort!!
     """
+    if isinstance(obj, str):
+        return obj
     try:
-        return str(obj)
+        return obj.encode(encoding)
     except UnicodeEncodeError:
-        # obj is unicode
-        return insane_unicode(unicode(obj
-                                      ).encode('unicode_escape')
-                              ).encode(encoding)
+        return insane_unicode(obj.encode('unicode_escape')).encode(encoding)
 
 
 def normize_text(text, asciionly=False):
@@ -115,12 +123,14 @@ def normize_text(text, asciionly=False):
     s = s.replace(u"\u2019", u"'")   # Handles windows other single quote.
     s = s.replace(u'0xcc', u' ')
     s = s.replace(u'\xe9', u'e')  # accented e
+    s = s.replace(u'aEUR(tm)', u"'")
+    s = s.replace(u'aEUR"', u'-')
     b = ftfy(s)
     b = unicodedata.normalize('NFD', b)
     if asciionly:
         b = unidecode(s).decode('utf-8')
         b = b.encode('ascii', 'ignore').decode('ascii')
-    return sane_unicode(b)
+    return render_safe(fix_text(sane_unicode(b)))
 
 
 def make_unicode_n_norm(text, returnencoding=False, asciionly=False):
