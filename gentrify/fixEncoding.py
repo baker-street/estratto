@@ -28,6 +28,7 @@ def render_safe(text):
     return remove_control_chars(remove_unsafe_private_use(text))
 
 
+'''
 def sane_unicode_bom(bytes_, errors='replace', returnencoding=False):
     """
     Convert a byte string into Unicode.
@@ -51,6 +52,7 @@ def sane_unicode_bom(bytes_, errors='replace', returnencoding=False):
                 return (unitext, encoding)
             else:
                 return unitext
+'''
 
 
 def sane_unicode(bytes_, encoding='utf-8', errors='replace',
