@@ -6,27 +6,20 @@ __created_on__ = '6/23/2015'
 
 
 # import tempfile
+from os.path import dirname
+from magic import from_buffer
 
 from smart_open import smart_open
-from magic import from_buffer
 
 from gentrify.fixEncoding import auto_unicode_dang_it
 from gentrify.parseBinary import parse_binary_from_string
 # from gentrify.fixEncoding import make_unicode_dang_it
 from gentrify.parseEmail import(is_an_email,
                                 email_whole_parse)
+from gentrify import utils
 
-# from gentrify.parseEmail import email_whole_parse
-
-OKEXT = {u'.doc',
-         u'.docx',
-         u'.pdf',
-         u'.txt',
-         u'.html',
-         u'.htm',
-         u'.eml',
-         u'.rtf',
-         }
+CONFFILE = dirname(utils.__file__) + '/defconf.json'
+OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
 
 
 def fit_into_data_mold(parsedtxt, txt, uri, ftype, mime, info):

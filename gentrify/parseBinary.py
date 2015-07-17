@@ -4,52 +4,56 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
 
-
-from subprocess import Popen, PIPE
-
-from docx import Document
-# from xlrd import XLRDError
-import pandas
-import zipfile
-
-from textract import process
-from textract.exceptions import(ExtensionNotSupported,
-                                ShellError)
-# http://stackoverflow.com/questions/5725278/python-help-using-pdfminer-as-a-library
-from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
-from pdfminer.converter import TextConverter
-from pdfminer.layout import LAParams
-from pdfminer.pdfpage import PDFPage
-from pdfminer.pdfdocument import(PDFTextExtractionNotAllowed,
-                                 PSEOF,
-                                 PDFEncryptionError,
-                                 PDFSyntaxError)
-from cStringIO import StringIO
-import bs4
-from tempfile import NamedTemporaryFile
-from pathlib import Path
-import re
-
-from magic import from_buffer
-# import mimetypes
-# mimetypes.init()
-# from mimetypes import guess_extension
-
-from gentrify.fixEncoding import auto_unicode_dang_it
-
 import logging
 LOG = logging.getLogger(__name__)
 
+from os.path import dirname
+import zipfile
+from subprocess import Popen, PIPE
+import re
+from cStringIO import StringIO
+from magic import from_buffer
 
-OKEXT = set([u'.doc',
-             u'.docx',
-             u'.pdf',
-             u'.txt',
-             u'.html',
-             u'.htm',
-             u'.eml',
-             u'.rtf',
-             ])
+
+from pathlib import Path
+# from xlrd import XLRDError
+import pandas
+try:
+    from docx import Document
+except ImportError:
+    LOG.warning("docx not installed, install to extract '.docx' text.")
+
+try:
+    from textract import process
+    from textract.exceptions import(ExtensionNotSupported,
+                                    ShellError)
+except ImportError:
+    LOG.warning('textract not installed, install for robust text extraction.')
+# http://stackoverflow.com/questions/5725278/python-help-using-pdfminer-as-a-library
+try:
+    from pdfminer.pdfinterp import PDFResourceManager, PDFPageInterpreter
+    from pdfminer.converter import TextConverter
+    from pdfminer.layout import LAParams
+    from pdfminer.pdfpage import PDFPage
+    from pdfminer.pdfdocument import(PDFTextExtractionNotAllowed,
+                                     PSEOF,
+                                     PDFEncryptionError,
+                                     PDFSyntaxError)
+except ImportError:
+    LOG.warning('pdfminer not installed, install to extract PDF text.')
+try:
+    from bs4 import BeautifulSoup
+except ImportError:
+    LOG.warning('BeautifulSoup (bs4) is not installed,',
+                'will not be able to parse XML and HTML.')
+
+
+from gentrify.fixEncoding import auto_unicode_dang_it
+from gentrify import utils
+from gentrify.utils import write_and_op_on_tmp
+
+CONFFILE = dirname(utils.__file__) + '/defconf.json'
+OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
 
 MIMETYPES = {'application/pdf': '.pdf',
              'application/msword': '.doc',
@@ -76,7 +80,12 @@ def auto_textract(filepath):
     If an excetpion is raised by textract, u'' is returned.
     """
     try:
-        return process(filepath, language='nor')
+        try:
+            return process(filepath, language='nor')
+        except NameError:
+            log = 'textract not installed, install for robust text extraction.'
+            LOG.warning('Attempted to use textract but, ' + log)
+            return u''
     except (ExtensionNotSupported,
             IndexError,
             ShellError,
@@ -93,53 +102,149 @@ def pandas_print_full(x):
 
 def convert_pdf_to_txt(path):
     rsrcmgr = PDFResourceManager()
-    retstr = StringIO()
     codec = 'utf-8'
     laparams = LAParams()
-    device = TextConverter(rsrcmgr, retstr, codec=codec, laparams=laparams)
-    with file(path, 'rb') as fp:
+    with StringIO as retstr:
+        with TextConverter(rsrcmgr,
+                           retstr,
+                           codec=codec,
+                           laparams=laparams) as device:
+            with file(path, 'rb') as fp:
+                try:
+                    interpreter = PDFPageInterpreter(rsrcmgr, device)
+                    password = ""
+                    maxpages = 0
+                    caching = True
+                    pagenos = set()
+                    for page in PDFPage.get_pages(fp,
+                                                  pagenos,
+                                                  maxpages=maxpages,
+                                                  password=password,
+                                                  caching=caching,
+                                                  check_extractable=True):
+                        interpreter.process_page(page)
+                    str_ = retstr.getvalue()
+                    return str_
+                except(TypeError):
+                    return u''
+
+
+def handle_pdf_files(filepath):
         try:
-            interpreter = PDFPageInterpreter(rsrcmgr, device)
-            password = ""
-            maxpages = 0
-            caching = True
-            pagenos = set()
-            for page in PDFPage.get_pages(fp, pagenos, maxpages=maxpages,
-                                          password=password, caching=caching,
-                                          check_extractable=True):
-                interpreter.process_page(page)
-            # fp.close()
-            device.close()
-            str_ = retstr.getvalue()
-            retstr.close()
-            return str_
-        except(TypeError):
+            try:
+                return convert_pdf_to_txt(filepath).replace('\x0c\x0c', '')
+            except (PDFTextExtractionNotAllowed,
+                    PSEOF,
+                    PDFEncryptionError,
+                    PDFSyntaxError):
+                try:
+                    return auto_textract(filepath)
+                except:
+                    return u''
+        except NameError:
+            LOG.warning('Attempted to use pdfminer but, ' +
+                        'pdfminer not installed, install to extract PDF text.')
             return u''
 
 
-def document_to_text(filepath):
-    # ----------------------
-    # Text doc files
-    if filepath.lower().endswith(".doc"):
+def handle_doc_files(filepath):
+    try:
         cmd = ['antiword', filepath]
         p = Popen(cmd, stdout=PIPE)
         stdout, stderr = p.communicate()
         return stdout.decode('ascii', 'ignore')
-    elif filepath.lower().endswith(".docx"):
+    except OSError:
+        LOG.warning('The antiword command is not installed, ' +
+                    "will not be able to extract text from '.doc' files.")
+        return u''
+
+
+def handle_docx_files(filepath):
+    try:
         document = Document(filepath)
         return '\n\n'.join([graph.text for graph in document.paragraphs])
-    # elif filepath.lower().endswith(".odt"):  # Not supporting currently
-    #     return None
-        # cmd = ['odt2txt', filepath]
-        # p = Popen(cmd, stdout=PIPE)
-        # stdout, stderr = p.communicate()
-        # return stdout.decode('ascii', 'ignore')
-    elif filepath.lower().endswith(".rtf"):
+    except NameError:
+        LOG.warning('Attempted to use textract but, ' +
+                    "docx not installed, install to extract '.docx' text.")
+        return u''
+
+
+def handle_rtf_files(filepath):
+    try:
         cmd = ['unrtf', filepath]
         p = Popen(cmd, stdout=PIPE)
         stdout, stderr = p.communicate()
-        return bs4.BeautifulSoup(stdout.decode('ascii', 'ignore')).text
+        try:
+            return BeautifulSoup(stdout).text
+        except NameError:
+            LOG.warning('Attempted to use BeautifulSoup but, ' +
+                        'BeautifulSoup (bs4) is not installed,' +
+                        'will not be able to parse XML and HTML.')
+            return stdout
+    except OSError:
+        LOG.warning('The unrtf command is not installed,' +
+                    "will not be able to extract text from '.rtf' files.")
+        return u''
+
+
+def handle_odt_files(filepath):
+    return u''
+    # try:
+    #     # cmd = ['odt2txt', filepath]
+    #     # p = Popen(cmd, stdout=PIPE)
+    #     # stdout, stderr = p.communicate()
+    #     # return stdout.decode('ascii', 'ignore')
+    # except OSError:
+    #     LOG.warning('The odt2txt command is not installed,' +
+    #                 "will not be able to extract text from '.odt' files.")
+    #     return u''
+
+
+BFILEHANDLEDICT = {u'.doc': handle_doc_files,
+                   u'.docx': handle_docx_files,
+                   u'.pdf': handle_pdf_files,
+                   u'.rtf': handle_rtf_files,
+                   }
+
+
+def document_to_text(filepath):
+    ext = ''.join(Path(filepath).suffixes).lower()
+    try:
+        parsefunc = BFILEHANDLEDICT[ext]
+        text = parsefunc(filepath)
+    except KeyError:
+        text = auto_textract(filepath)
+    return auto_unicode_dang_it(text)
+
+
+def _OLD_document_to_text(filepath):
+    ext = ''.join(Path(filepath).suffixes).lower()
     # ----------------------
+    # Text doc files
+    if ext == ".doc":
+        return handle_doc_files(filepath)
+    elif ext == ".docx":
+        return handle_docx_files(filepath)
+    elif ext == ".odt":  # Not supporting currently
+        return handle_odt_files(filepath)
+    elif ext == ".rtf":
+        return handle_rtf_files(filepath)
+    # ----------------------
+    # Other
+    elif ext == ".pdf":
+        return handle_pdf_files(filepath)
+    else:
+        return auto_textract(filepath)
+    # will handle zips another way
+    # elif filepath[-4:].lower() == ".zip":
+    #    with TempDir() as dastmpdir:
+    #        try:
+    #            extractedfiles = handle_zip_files(filepath, dastmpdir)
+    #            return [document_to_text('{}/{}'.format(dastmpdir,path))
+    #                    for path in extractedfiles]
+    #        except zipfile.BadZipfile:
+    #            return None
+    # ----------------------  # Might add back in later
     # SpreadSheets
     # elif filepath.lower().endswith((".xls", ".xlsx")):
         # Not supporting currently
@@ -159,30 +264,6 @@ def document_to_text(filepath):
         #     return pandas_print_full(pandas.read_excel(filepath))
         # except (XLRDError,IndexError,AssertionError,OverflowError):
         #     return None
-    # ----------------------
-    # Other
-    elif filepath.lower().endswith(".pdf"):
-        try:
-            return convert_pdf_to_txt(filepath).replace('\x0c\x0c', '')
-        except (PDFTextExtractionNotAllowed,
-                PSEOF,
-                PDFEncryptionError,
-                PDFSyntaxError):
-            try:
-                auto_textract(filepath)
-            except:
-                return u''
-    # will handle zips another way
-    # elif filepath[-4:].lower() == ".zip":
-    #    with TempDir() as dastmpdir:
-    #        try:
-    #            extractedfiles = handle_zip_files(filepath, dastmpdir)
-    #            return [document_to_text('{}/{}'.format(dastmpdir,path))
-    #                    for path in extractedfiles]
-    #        except zipfile.BadZipfile:
-    #            return None
-    else:
-        return auto_textract(filepath)
 
 
 def extract_text(filename):
@@ -219,8 +300,6 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
     if not suffix:
         suffix = auto_unicode_dang_it('.' +
                                       fname.split('.')[-1]).encode('ascii')
-    # extbymime = guess_extension(from_buffer(fdata, mime=True),
-    #                             strict=True)
     try:
         extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
     except KeyError:
@@ -228,13 +307,8 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
 
     if extbymime.lower() != suffix.lower():
         LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
-
-    with NamedTemporaryFile(suffix=extbymime) as tmp:
-        tmp.file.write(fdata)
-        tmp.file.seek(0)
-        # try:
-        filedict = parse_binary(tmp.name)
-        # except(AttributeError):
-        #    atchdict['filedata'] = u''
+    filedict = write_and_op_on_tmp(fdata=fdata,
+                                   function=parse_binary,
+                                   suffix=extbymime)
     filedict['rawbody'] = fdata
     return filedict

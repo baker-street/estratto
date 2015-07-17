@@ -5,8 +5,23 @@ __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/20/2015'
 
 
+from tempfile import NamedTemporaryFile
+import json
 import re
+
 import arrow
+
+
+def load_json(filepath):
+    with open(filepath) as fp:
+        return json.load(fp)
+
+
+def write_and_op_on_tmp(data, function, suffix, mode='w+b', dir=None):
+    with NamedTemporaryFile(suffix=suffix, mode=mode, dir=dir) as tmp:
+        tmp.file.write(fdata)
+        tmp.file.seek(0)
+        return function(tmp.name)
 
 
 def normize_datetime_tmzone_north_am(s, totmz='utc'):
