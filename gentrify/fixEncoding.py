@@ -258,14 +258,13 @@ def make_unicode_dang_it(text,
                                      normize=normize,
                                      asciionly=asciionly)
     except UnicodeDecodeError:
-        uni = auto_unicode_dang_it(__insane_unicode(text),
-                                   encoding=encoding,
-                                   errors=errors,
-                                   returnencoding=False,
-                                   normize=normize,
-                                   asciionly=asciionly,
-                                   insureencode=False)
-        encoding = ''
+        return make_unicode_dang_it(__insane_unicode(text),
+                                    encoding=encoding,
+                                    errors=errors,
+                                    returnencoding=returnencoding,
+                                    normize=normize,
+                                    asciionly=asciionly,
+                                    insureencode=insureencode)
     if insureencode:
         try:
             uni = unicode(uni.encode('utf-8'), 'utf-8', errors='replace')
@@ -295,26 +294,19 @@ def auto_eng_unicode_dang_it(text,
     relating to encoding, while operating on the text.
     !!
     """
-    return make_unicode_dang_it(text,
-                                encoding,
-                                errors,
-                                normize=True,
-                                asciionly=True,
-                                returnencoding=returnencoding,
-                                insureencode=True)
+    if isinstance(text, unicode) or isinstance(text, str):
+        return make_unicode_dang_it(text,
+                                    encoding,
+                                    errors,
+                                    normize=True,
+                                    asciionly=True,
+                                    returnencoding=returnencoding,
+                                    insureencode=True)
+    else:
+        raise ValueError
 
 
-def auto_unicode_dang_it(text,
-                         encoding='utf-8',
-                         errors='replace',
-                         returnencoding=False):
-    """
-    Use auto_eng_unicode_dang_it instead.
-    """
-    return auto_eng_unicode_dang_it(text,
-                                    encoding=encoding,
-                                    errors=errors,
-                                    returnencoding=returnencoding)
+auto_unicode_dang_it = auto_eng_unicode_dang_it
 
 
 def make_byte(text, errors='strict', hohw=False, normize=False, asciionly=False,

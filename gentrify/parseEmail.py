@@ -68,8 +68,13 @@ def email_parse_attachment(msgpart):
                           'filename': fname,
                           }
             for param in dispositions[1:]:
-                name, value = param.split("=")
-                name = name.strip().lower()
+                try:
+                    name, value = param.split("=")
+                except(ValueError):
+                    name, value, ext = param.split("=")
+                    value = value + ext
+                    LOG.critical('EmailPath:\t' + param + '\t' + value)
+                name = name.strip().lower().strip('*')
                 if name == "filename":
                     attachment['filename'] = value.replace('"', '')
             return attachment
@@ -126,6 +131,10 @@ def email_parse(content,
                                                   part.get_content_charset(),
                                                   'replace')
     try:
+        try:
+            date = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
+        except(TypeError):
+            date = u''
         msgbits = {'subject': auto_unicode_dang_it(subject),
                    'body': body_text,
                    # 'body_html': body_html,
@@ -133,10 +142,10 @@ def email_parse(content,
                                   for addr in parseaddr(msgobj.get('From'))
                                   ]),
                    'attachment': attch_stats_from_attchdict(attachments),
-                   'date': unicode(normize_datetime_tmzone_north_am(
-                                   msgobj['date'])),
+                   'date': date,
                    }
     except ValueError:
+        LOG.critical('Could not parse required headers')
         raise ValueError('Was not able to parse all required email headers.')
     if extraaddress_headers:
         for field in extraaddress_headers:
@@ -151,7 +160,7 @@ def email_parse(content,
         for field in extraheaders:
             try:
                 msgbits[field] = auto_unicode_dang_it(msgobj[field])
-            except(KeyError, AttributeError):
+            except(KeyError, AttributeError, ValueError):
                 msgbits[field] = u''
     return msgbits, attachments
 

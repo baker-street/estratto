@@ -81,7 +81,11 @@ def auto_textract(filepath):
     """
     try:
         try:
-            return process(filepath, language='nor')
+            t = process(filepath, language='nor')
+            if t:
+                return t
+            else:
+                return u''
         except NameError:
             log = 'textract not installed, install for robust text extraction.'
             LOG.warning('Attempted to use textract but, ' + log)
@@ -100,15 +104,40 @@ def pandas_print_full(x):
     return g
 
 
+class StringIOContext(object):
+    def __init__(self):
+        self.retstr = StringIO()
+
+    def __enter__(self):
+        return self.retstr
+
+    def __exit__(self, *args):
+        self.retstr.close()
+
+
+class TextConverterContext(object):
+    def __init__(self, rsrcmgr, retstr, codec, laparams):
+        self.device = TextConverter(rsrcmgr,
+                                    retstr,
+                                    codec=codec,
+                                    laparams=laparams)
+
+    def __enter__(self):
+        return self.device
+
+    def __exit__(self, *args):
+        self.device.close()
+
+
 def convert_pdf_to_txt(path):
     rsrcmgr = PDFResourceManager()
     codec = 'utf-8'
     laparams = LAParams()
-    with StringIO as retstr:
-        with TextConverter(rsrcmgr,
-                           retstr,
-                           codec=codec,
-                           laparams=laparams) as device:
+    with StringIOContext() as retstr:
+        with TextConverterContext(rsrcmgr,
+                                  retstr,
+                                  codec=codec,
+                                  laparams=laparams) as device:
             with file(path, 'rb') as fp:
                 try:
                     interpreter = PDFPageInterpreter(rsrcmgr, device)
@@ -124,7 +153,10 @@ def convert_pdf_to_txt(path):
                                                   check_extractable=True):
                         interpreter.process_page(page)
                     str_ = retstr.getvalue()
-                    return str_
+                    if str_:
+                        return str_
+                    else:
+                        return u''
                 except(TypeError):
                     return u''
 
@@ -152,7 +184,7 @@ def handle_doc_files(filepath):
         cmd = ['antiword', filepath]
         p = Popen(cmd, stdout=PIPE)
         stdout, stderr = p.communicate()
-        return stdout.decode('ascii', 'ignore')
+        return stdout
     except OSError:
         LOG.warning('The antiword command is not installed, ' +
                     "will not be able to extract text from '.doc' files.")
@@ -207,14 +239,17 @@ BFILEHANDLEDICT = {u'.doc': handle_doc_files,
                    }
 
 
-def document_to_text(filepath):
+def document_to_text(filepath, okext=OKEXT):
     ext = ''.join(Path(filepath).suffixes).lower()
-    try:
-        parsefunc = BFILEHANDLEDICT[ext]
-        text = parsefunc(filepath)
-    except KeyError:
-        text = auto_textract(filepath)
-    return auto_unicode_dang_it(text)
+    if ext in okext:
+        try:
+            parsefunc = BFILEHANDLEDICT[ext]
+            text = parsefunc(filepath)
+        except KeyError:
+            text = auto_textract(filepath)
+        if text:
+            return auto_unicode_dang_it(text)
+    return u''
 
 
 def _OLD_document_to_text(filepath):
@@ -307,7 +342,7 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
 
     if extbymime.lower() != suffix.lower():
         LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
-    filedict = write_and_op_on_tmp(fdata=fdata,
+    filedict = write_and_op_on_tmp(data=fdata,
                                    function=parse_binary,
                                    suffix=extbymime)
     filedict['rawbody'] = fdata

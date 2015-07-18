@@ -19,7 +19,7 @@ def load_json(filepath):
 
 def write_and_op_on_tmp(data, function, suffix, mode='w+b', dir=None):
     with NamedTemporaryFile(suffix=suffix, mode=mode, dir=dir) as tmp:
-        tmp.file.write(fdata)
+        tmp.file.write(data)
         tmp.file.seek(0)
         return function(tmp.name)
 
