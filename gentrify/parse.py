@@ -94,8 +94,11 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
 
 
 # ----------------------------------------------------------------------------
-# parse email attachments
+# parse email attachments  -  not being used - consider deleting
 def get_attchs_text(rawattchslist):
+    """
+    not being used - consider deleting
+    """
     attchslist = []
     for i, attch in enumerate(rawattchslist):
         parsedfile = parse_multi_layer_file(uri=attch['body'],

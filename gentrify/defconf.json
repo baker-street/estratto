@@ -1,1 +1,30 @@
-{"ok_ext_set": [".rtf", ".eml", ".doc", ".txt", ".html", ".docx", ".pdf", ".htm"]}
+{
+    "ok_ext_set": [
+        ".rtf",
+        ".eml",
+        ".doc", 
+        ".txt",
+        ".html",
+        ".docx",
+        ".pdf",
+        ".htm",
+        ".email",
+        "."
+    ],
+    "email_ext_set": [
+        ".eml",
+        ".txt",
+        ".email",
+        "."
+    ],
+    "email_extra_headers": [
+        "thread-index",
+        "message-id",
+        "return-path"
+    ],
+    "email_extra_address_headers": [
+        "to",
+        "bcc",
+        "cc"
+    ]
+}

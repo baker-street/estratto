@@ -4,6 +4,8 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
 
+from functools import partial
+from collections import(Mapping, Iterable)
 import unicodedata
 import logging
 LOG = logging.getLogger(__name__)
@@ -336,3 +338,21 @@ def make_byte(text, errors='strict', hohw=False, normize=False, asciionly=False,
 
 def auto_normize_byte(text, encoding='utf-8', errors='replace'):
     return make_byte(text, errors='replace', hohw=True, encoding=encoding)
+
+
+def convert_datastruct_text(data, convertfunc=unicode):
+    convert_ds_text = partial(convert_datastruct_text,
+                              convertfunc=convertfunc)
+    if isinstance(data, basestring):
+        return convertfunc(data)
+    elif isinstance(data, Mapping):
+        return dict(map(convert_ds_text, data.iteritems()))
+    elif isinstance(data, Iterable):
+        return type(data)(map(convert_ds_text, data))
+    else:
+        return data
+
+convert_datastruct_text_uni = partial(convert_datastruct_text,
+                                      convertfunc=sane_unicode)
+convert_datastruct_text_str = partial(convert_datastruct_text,
+                                      convertfunc=make_byte)

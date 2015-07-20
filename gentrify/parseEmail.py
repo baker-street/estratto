@@ -4,44 +4,30 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/20/2015'
 
+import logging
+LOG = logging.getLogger(__name__)
 
+from os.path import dirname
 from email.parser import Parser
 from email.Header import decode_header
 from email.utils import parseaddr
-
 from base64 import b64decode
-
 from re import(search,
                IGNORECASE,
                match,
                )
 
-# from tempfile import NamedTemporaryFile
-from smart_open import smart_open
 
 from gentrify.fixEncoding import auto_unicode_dang_it
+from gentrify import utils
 from gentrify.utils import normize_datetime_tmzone_north_am
-# from gentrify.parseBinary import parse_binary_from_string
-# from gentrify.parse import parse_multi_layer_file
-# from gentrify.parse import get_attchs_text
+from gentrify.utils import sopen
 
-import logging
-LOG = logging.getLogger(__name__)
+CONFDICT = utils.load_json(dirname(utils.__file__) + '/defconf.json')
+EMAILEXTS = set(CONFDICT['email_ext_set'])
 
-
-EMAILEXTS = set(['.eml',
-                 '.txt',
-                 '.email',
-                 ])
-
-EXTRA_HEADERS = ['thread-index',
-                 'message-id',
-                 'return-path',
-                 ]
-EXTRA_ADDRESS_HEADERS = ['to',
-                         'bcc',
-                         'cc',
-                         ]
+EXTRA_HEADERS = CONFDICT['email_extra_headers']
+EXTRA_ADDRESS_HEADERS = CONFDICT['email_extra_address_headers']
 
 
 # ----------------------------------------------------------------------------
@@ -73,7 +59,15 @@ def email_parse_attachment(msgpart):
                 except(ValueError):
                     name, value, ext = param.split("=")
                     value = value + ext
-                    LOG.critical('EmailPath:\t' + param + '\t' + value)
+                    if param:
+                        p = param
+                    else:
+                        p = "Param==None"
+                    if value:
+                        v = value
+                    else:
+                        v = "Value==None"
+                    LOG.critical('EmailPath:\t' + p + '\t' + v)
                 name = name.strip().lower().strip('*')
                 if name == "filename":
                     attachment['filename'] = value.replace('"', '')
@@ -175,9 +169,9 @@ def is_an_email_from_cont(txt):
         From:
         Subject:
     """
-    return bool(search('Mime-Version\:', txt, flags=IGNORECASE) and
-                search('From\:', txt, flags=IGNORECASE) and
-                search('Subject\:', txt, flags=IGNORECASE))
+    return bool(bool(search('Mime-Version\:', txt, flags=IGNORECASE)) and
+                bool(search('From\:', txt, flags=IGNORECASE)) and
+                bool(search('Subject\:', txt, flags=IGNORECASE)))
 
 
 def is_an_email_from_ext(fname, extset=EMAILEXTS):
@@ -240,10 +234,10 @@ def email_whole_parse(uri, txt=None, returnraw=False):
     Parses email from file and its attachments.
     Returns attachments as both raw and plain text (if possible).
 
-    Can handle s3 and HDFS.
+    Not yet but will - Can handle s3 and HDFS.
     """
     if txt is None:
-        with smart_open(uri) as fobj:
+        with sopen(uri) as fobj:
             txt = fobj.read()
     emailtuple = email_whole_parse_from_str(txt)
     emailtuple[0]['filename'] = auto_unicode_dang_it(uri)

@@ -4,10 +4,17 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '7/14/2015'
 
+import os
+
+from gentrify import utils
 from gentrify.fixEncoding import(sane_unicode,
                                  __insane_unicode,
                                  make_unicode_dang_it,
-                                 auto_eng_unicode_dang_it)
+                                 auto_eng_unicode_dang_it,
+                                 convert_datastruct_text)
+
+TEST_DIR = '/'.join(__file__.split('/')[:-1]) + '/'
+os.chdir(TEST_DIR)
 
 
 # basic tests
@@ -86,3 +93,16 @@ def test_auto_unicode_dang_it4():
     assert(res ==
            u'"EUR"')
     assert(isinstance(res, unicode))
+
+
+def test__convert_datastruct_text():
+    smpldatastruct = utils.load_json('sample_parsed_email.json')
+    tounicode = convert_datastruct_text(smpldatastruct,
+                                        convertfunc=unicode)
+    tostr = convert_datastruct_text(smpldatastruct,
+                                    convertfunc=str)
+    nochange = convert_datastruct_text(smpldatastruct,
+                                       convertfunc=lambda a: a)
+    assert(smpldatastruct == tounicode)
+    assert(smpldatastruct == tostr)
+    assert(smpldatastruct == nochange)
