@@ -54,11 +54,12 @@ from gentrify.utils import write_and_op_on_tmp
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
 OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
-
+DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+DOTX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.template'
 MIMETYPES = {'application/pdf': '.pdf',
              'application/msword': '.doc',
-             'application/vnd.\
-             openxmlformats-officedocument.wordprocessingml.document': '.docx',
+             DOCX: '.docx',
+             DOTX: '.dotx',
              'text/plain': '.txt',
              'message/rfc822': '.eml',
              'text/html': '.html',
@@ -342,8 +343,12 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
 
     if extbymime.lower() != suffix.lower():
         LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
+    if suffix.lower() in OKEXT:
+        usesuffix = extbymime
+    else:
+        usesuffix = suffix
     filedict = write_and_op_on_tmp(data=fdata,
                                    function=parse_binary,
-                                   suffix=extbymime)
+                                   suffix=usesuffix)
     filedict['rawbody'] = fdata
     return filedict
