@@ -4,6 +4,9 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/20/2015'
 
+# TODO (steven_c) Clean and optimize.
+# TODO (steven_c) Make code more readable.
+
 import logging
 LOG = logging.getLogger(__name__)
 
@@ -32,7 +35,7 @@ EXTRA_ADDRESS_HEADERS = CONFDICT['email_extra_address_headers']
 
 # ----------------------------------------------------------------------------
 # Basic email parsing
-def email_parse_attachment(msgpart):
+def email_parse_attachment(msgpart):  # TODO (steven_c) Make less complex.
     content_disposition = msgpart.get("Content-Disposition", None)
     if content_disposition:
         dispositions = content_disposition.strip().split(";")
@@ -49,9 +52,10 @@ def email_parse_attachment(msgpart):
             if match('(Untitled)(.{0,3})(attachment)(.{0,10})(\.txt)', fname):
                 filedata = u''
 
-            attachment = {'body': filedata,
-                          'type': msgpart.get_content_type(),
-                          'filename': fname,
+            attachment = {u'body': filedata,
+                          u'type': msgpart.get_content_type(),
+                          u'filename': fname,
+                          # fyi, this is a filename not pointer.
                           }
             for param in dispositions[1:]:
                 try:
@@ -69,20 +73,21 @@ def email_parse_attachment(msgpart):
                         v = "Value==None"
                     LOG.critical('EmailPath:\t' + p + '\t' + v)
                 name = name.strip().lower().strip('*')
-                if name == "filename":
-                    attachment['filename'] = value.replace('"', '')
+                if name == u"filename":
+                    attachment[u'filename'] = value.replace('"', '')
             return attachment
     return None
 
 
 def attch_stats_from_attchdict(attchdict):
-    attchfnamlist = [attch['filename'] for attch in attchdict]
+    attchfnamlist = [attch[u'filename'] for attch in attchdict]
     simpleattchdict = dict()
-    simpleattchdict['filename'] = attchfnamlist
-    simpleattchdict['number_of_attachments'] = len(attchfnamlist)
+    simpleattchdict[u'filename'] = attchfnamlist
+    simpleattchdict[u'number_of_attachments'] = len(attchfnamlist)
     return simpleattchdict
 
 
+# TODO (steven_c) Make less complex.
 def email_parse(content,
                 extraheaders=EXTRA_HEADERS,
                 extraaddress_headers=EXTRA_ADDRESS_HEADERS):
@@ -129,14 +134,14 @@ def email_parse(content,
             date = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
         except(TypeError):
             date = u''
-        msgbits = {'subject': auto_unicode_dang_it(subject),
-                   'body': body_text,
+        msgbits = {u'subject': auto_unicode_dang_it(subject),
+                   u'body': body_text,
                    # 'body_html': body_html,
-                   'from': tuple([auto_unicode_dang_it(addr)
-                                  for addr in parseaddr(msgobj.get('From'))
-                                  ]),
-                   'attachment': attch_stats_from_attchdict(attachments),
-                   'date': date,
+                   u'from': tuple([auto_unicode_dang_it(addr)
+                                   for addr in parseaddr(msgobj.get('From'))
+                                   ]),
+                   u'attachment': attch_stats_from_attchdict(attachments),
+                   u'date': date,
                    }
     except ValueError:
         LOG.critical('Could not parse required headers')
@@ -202,21 +207,6 @@ def is_an_email(fname, txt=None, extset=EMAILEXTS):
 
 
 # ----------------------------------------------------------------------------
-# parse attachments
-"""
-def get_attchs_text(rawattchslist):
-    attchslist = []
-    for i, attch in enumerate(rawattchslist):
-        parsedfile = parse_multi_layer_file(uri=attch['body'],
-                                            txt=attch['filename'],
-                                            ftype=attch['type'])
-        for parseddoc in parsedfile:
-            attchslist.append(parseddoc)
-    return attchslist
-"""
-
-
-# ----------------------------------------------------------------------------
 # parse email and attachments
 def email_whole_parse_from_str(text):
     """
@@ -234,13 +224,13 @@ def email_whole_parse(uri, txt=None, returnraw=False):
     Parses email from file and its attachments.
     Returns attachments as both raw and plain text (if possible).
 
-    Not yet but will - Can handle s3 and HDFS.
+    Not yet, but will handle s3 and HDFS.
     """
     if txt is None:
         with sopen(uri) as fobj:
             txt = fobj.read()
     emailtuple = email_whole_parse_from_str(txt)
-    emailtuple[0]['filename'] = auto_unicode_dang_it(uri)
+    emailtuple[0][u'filename'] = auto_unicode_dang_it(uri)
     if returnraw:
         return emailtuple, txt
     else:

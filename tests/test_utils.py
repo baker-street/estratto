@@ -13,6 +13,34 @@ TEST_DIR = '/'.join(__file__.split('/')[:-1]) + '/'
 os.chdir(TEST_DIR)
 
 
+def test__get_file_suffixes__1():
+    assert(utils.get_file_suffixes('/foo/bar/baz.txt') == '.txt')
+
+
+def test__get_file_suffixes__2():
+    assert(utils.get_file_suffixes('~/baz.txt') == '.txt')
+
+
+def test__get_file_suffixes__3():
+    assert(utils.get_file_suffixes('/foo/b.ar/baz.txt') == '.txt')
+
+
+def test__get_file_suffixes__if_pathlib_is_installed():
+    assert(utils.get_file_suffixes('/foo/bar/baz.tar.gz') == '.tar.gz')
+
+
+def test___get_file_suffixes__opt_two__1():
+    assert(utils._get_file_suffixes('/foo/bar/baz.tar.gz') == '.gz')
+
+
+def test___get_file_suffixes__opt_two__2():
+    assert(utils._get_file_suffixes('/foo/bar/baz.txt') == '.txt')
+
+
+def test___get_file_suffixes__opt_two__3():
+    assert(utils._get_file_suffixes('~/baz.txt') == '.txt')
+
+
 def test__write_and_op_on_tmp():
     smpldata = 'data\ndata\n' * 300
 

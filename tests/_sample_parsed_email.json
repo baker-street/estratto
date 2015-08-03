@@ -1,0 +1,44 @@
+[
+    {
+        "info": "ASCII text, with CRLF, LF line terminators", 
+        "rawbody": "Message-ID: <21920205.1075855377891.JavaMail.evans@thyme>\r\nDate: Tue, 1 Jan 2002 17:19:40 -0800 (PST)\r\nFrom: arsystem@mailman.enron.com\r\nTo: k..allen@enron.com\r\nSubject: Your Approval is Overdue: Access Request for matt.smith@enron.com\r\nMime-Version: 1.0\r\nContent-Type: text/plain; charset=us-ascii\r\nContent-Transfer-Encoding: 7bit\r\nX-From: ARSystem <ARSystem@mailman.enron.com>@ENRON\r\nX-To: Allen, Phillip K. </O=ENRON/OU=NA/CN=RECIPIENTS/CN=PALLEN>\r\nX-cc: \r\nX-bcc: \r\nX-Folder: \\Phillip_Allen_Jan2002_1\\Allen, Phillip K.\\Inbox\r\nX-Origin: Allen-P\r\nX-FileName: pallen (Non-Privileged).pst\r\n\r\nThis request has been pending your approval for  60 days.  Please click http://itcapps.corp.enron.com/srrs/auth/emailLink.asp?ID=000000000067320&Page=Approval to review and act upon this request.\n\n\n\n\n\nRequest ID          : 000000000067320\nRequest Create Date : 10/11/01 10:24:53 AM\nRequested For       : matt.smith@enron.com\nResource Name       : Risk Acceptance Forms Local Admin Rights - Permanent\nResource Type       : Applications\n\n\n\n", 
+        "filename": "sample_enron_email.", 
+        "content": {
+            "body": "This request has been pending your approval for  60 days.  Please click http://itcapps.corp.enron.com/srrs/auth/emailLink.asp?ID=000000000067320&Page=Approval to review and act upon this request.\n\n\n\n\n\nRequest ID          : 000000000067320\nRequest Create Date : 10/11/01 10:24:53 AM\nRequested For       : matt.smith@enron.com\nResource Name       : Risk Acceptance Forms Local Admin Rights - Permanent\nResource Type       : Applications\n\n\n\n", 
+            "thread-index": "", 
+            "from": [
+                "", 
+                "arsystem@mailman.enron.com"
+            ], 
+            "return-path": "", 
+            "cc": [
+                [
+                    "", 
+                    ""
+                ]
+            ], 
+            "filename": "sample_enron_email.", 
+            "bcc": [
+                [
+                    "", 
+                    ""
+                ]
+            ], 
+            "to": [
+                [
+                    "", 
+                    "k..allen@enron.com"
+                ]
+            ], 
+            "attachment": {
+                "number_of_attachments": 0, 
+                "filename": []
+            }, 
+            "date": "2002-01-02T01:19:40+00:00", 
+            "message-id": "<21920205.1075855377891.JavaMail.evans@thyme>", 
+            "subject": "Your Approval is Overdue: Access Request for matt.smith@enron.com"
+        }, 
+        "mime": "text/plain", 
+        "type": "email"
+    }
+]

@@ -8,6 +8,7 @@ import os
 import json
 
 from gentrify import(parse, utils)
+from gentrify.utils import flatten_handle_all
 
 TEST_DIR = '/'.join(__file__.split('/')[:-1]) + '/'
 os.chdir(TEST_DIR)
@@ -31,7 +32,18 @@ def test__fit_into_data_mold():
 
 
 def test__parse_multi_layer_file():
-    cached = utils.load_file('sample_parsed_email.json')
-    new = json.dumps(parse.parse_multi_layer_file('sample_enron_email.'),
-                     indent=4)
+    cached = utils.load_json('sample_parsed_email.json')
+    new = json.loads(json.dumps(
+                     parse.parse_multi_layer_file('sample_enron_email.')))
     assert(new == cached)
+
+
+def test__parse_multi_layer_file__is_output_all_unicode():
+    doclist = parse.parse_multi_layer_file('sample_enron_email.')
+    for docdict in doclist:
+        # These items should not be decoded, so omitting them from the test.
+        docdict['content']['attachment']['filename'] = u''
+        docdict['rawbody'] = u''
+        for item in flatten_handle_all(docdict, dictvalues=True):
+            if isinstance(item, basestring):
+                assert(isinstance(item, unicode))

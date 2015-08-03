@@ -4,6 +4,9 @@ __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
 
+# TODO (steven_c) Continue cleaning and optimizing.
+# TODO (steven_c) Continue making code more readable.
+
 import logging
 LOG = logging.getLogger(__name__)
 
@@ -13,16 +16,15 @@ from subprocess import Popen, PIPE
 import re
 from cStringIO import StringIO
 from magic import from_buffer
+# from os import path
+from os.path import isfile
 
-
-from pathlib import Path
 # from xlrd import XLRDError
 import pandas
 try:
     from docx import Document
 except ImportError:
     LOG.warning("docx not installed, install to extract '.docx' text.")
-
 try:
     from textract import process
     from textract.exceptions import(ExtensionNotSupported,
@@ -50,7 +52,8 @@ except ImportError:
 
 from gentrify.fixEncoding import auto_unicode_dang_it
 from gentrify import utils
-from gentrify.utils import write_and_op_on_tmp
+from gentrify.utils import(write_and_op_on_tmp, get_file_suffixes)
+
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
 OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
@@ -130,7 +133,8 @@ class TextConverterContext(object):
         self.device.close()
 
 
-def convert_pdf_to_txt(path):
+# TODO (steven_c) "convert_pdf_to_txt" Try and simplify this, maybe break it up.
+def convert_pdf_to_txt(_path):
     rsrcmgr = PDFResourceManager()
     codec = 'utf-8'
     laparams = LAParams()
@@ -139,7 +143,7 @@ def convert_pdf_to_txt(path):
                                   retstr,
                                   codec=codec,
                                   laparams=laparams) as device:
-            with file(path, 'rb') as fp:
+            with file(_path, 'rb') as fp:
                 try:
                     interpreter = PDFPageInterpreter(rsrcmgr, device)
                     password = ""
@@ -241,7 +245,7 @@ BFILEHANDLEDICT = {u'.doc': handle_doc_files,
 
 
 def document_to_text(filepath, okext=OKEXT):
-    ext = ''.join(Path(filepath).suffixes).lower()
+    ext = get_file_suffixes(filepath).lower()
     if ext in okext:
         try:
             parsefunc = BFILEHANDLEDICT[ext]
@@ -253,8 +257,9 @@ def document_to_text(filepath, okext=OKEXT):
     return u''
 
 
+# TODO (steven_c) "_OLD_document_to_text" Work on removing for good.
 def _OLD_document_to_text(filepath):
-    ext = ''.join(Path(filepath).suffixes).lower()
+    ext = get_file_suffixes(filepath).lower()
     # ----------------------
     # Text doc files
     if ext == ".doc":
@@ -303,8 +308,7 @@ def _OLD_document_to_text(filepath):
 
 
 def extract_text(filename):
-    filenameobj = Path(filename)
-    if filenameobj.is_file():
+    if isfile(filename):
         txt = document_to_text(filename)
         if txt is None:
             return u''
@@ -320,9 +324,12 @@ def extract_text(filename):
 
 def parse_binary(fname, extset=OKEXT):
     if not fname.lower().endswith(tuple(extset)):
-        return {u'body': u''}
+        return {u'body': u'',
+                u'filename': fname,  # Consider dropping.
+                }
     else:
         return {u'body': auto_unicode_dang_it(extract_text(fname)),
+                u'filename': fname,  # Consider dropping.
                 }
 
 EXTWARN = """Guessed ext does not match the provided ext.\tguess:{gext}\
@@ -339,8 +346,9 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
     try:
         extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
     except KeyError:
-        return {u'body': u''}
-
+        return {u'body': u'',
+                u'filename': u'',  # Consider dropping.
+                }
     if extbymime.lower() != suffix.lower():
         LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
     if suffix.lower() in OKEXT:
