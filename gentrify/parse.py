@@ -9,6 +9,7 @@ __created_on__ = '6/23/2015'
 from os.path import dirname
 from magic import from_buffer
 
+# TODO (steven_c) Replace smart_open!
 from smart_open import smart_open
 
 from gentrify.fixEncoding import(auto_unicode_dang_it, sane_unicode)
@@ -39,7 +40,8 @@ def fit_into_data_mold(parsedtxt, txt, uri, ftype, mime, info):
             }
 
 
-# Rewrite this so that it sucks less.
+# TODO Add support for zip files and more than one generation
+# TODO (steven_c) Rewrite this so that it sucks less.
 #   - Less complex
 #   - More readable
 def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
@@ -93,19 +95,3 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
                                ftype,
                                mime=mime,
                                info=info)]
-
-
-# ----------------------------------------------------------------------------
-# parse email attachments  -  not being used - consider deleting
-def get_attchs_text(rawattchslist):
-    """
-    not being used - consider deleting
-    """
-    attchslist = []
-    for i, attch in enumerate(rawattchslist):
-        parsedfile = parse_multi_layer_file(uri=attch['body'],
-                                            txt=attch['filename'],
-                                            ftype=attch['type'])
-        for parseddoc in parsedfile:
-            attchslist.append(parseddoc)
-    return attchslist

@@ -34,7 +34,7 @@
                 "number_of_attachments": 0, 
                 "filename": []
             }, 
-            "date": "2002-01-02T01:19:40+00:00", 
+            "datetime": "2002-01-02T01:19:40+00:00", 
             "message-id": "<21920205.1075855377891.JavaMail.evans@thyme>", 
             "subject": "Your Approval is Overdue: Access Request for matt.smith@enron.com"
         }, 

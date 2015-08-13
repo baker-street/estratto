@@ -201,7 +201,7 @@ def handle_docx_files(filepath):
         document = Document(filepath)
         return '\n\n'.join([graph.text for graph in document.paragraphs])
     except NameError:
-        LOG.warning('Attempted to use textract but, ' +
+        LOG.warning('Attempted to use docx but, ' +
                     "docx not installed, install to extract '.docx' text.")
         return u''
 

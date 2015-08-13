@@ -131,9 +131,9 @@ def email_parse(content,
                                                   'replace')
     try:
         try:
-            date = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
+            datetime = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
         except(TypeError):
-            date = u''
+            datetime = u''
         msgbits = {u'subject': auto_unicode_dang_it(subject),
                    u'body': body_text,
                    # 'body_html': body_html,
@@ -141,7 +141,7 @@ def email_parse(content,
                                    for addr in parseaddr(msgobj.get('From'))
                                    ]),
                    u'attachment': attch_stats_from_attchdict(attachments),
-                   u'date': date,
+                   u'datetime': datetime,
                    }
     except ValueError:
         LOG.critical('Could not parse required headers')
