@@ -20,7 +20,7 @@ from magic import from_buffer
 from os.path import isfile
 
 # from xlrd import XLRDError
-import pandas
+
 try:
     from docx import Document
 except ImportError:
@@ -99,13 +99,6 @@ def auto_textract(filepath):
             ShellError,
             TypeError):
         return u''
-
-
-def pandas_print_full(x):
-    pandas.set_option('display.max_rows', len(x))
-    g = unicode(x)
-    pandas.reset_option('display.max_rows')
-    return g
 
 
 class StringIOContext(object):
