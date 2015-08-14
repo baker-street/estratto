@@ -22,7 +22,6 @@ except(ImportError):
     LOG.debug('unidecode is not installed, normalization to ASCII will not be\
  as robust')
 from ftfy import fix_text
-from ftfy.fixes import remove_control_chars, remove_unsafe_private_use
 
 
 def verify_unicode(text):
@@ -39,15 +38,6 @@ def verify_unicode(text):
 
 # ----------------------------------------------------------------------------
 # Cleaning up text.
-
-# all of this is done by fix_text by default.
-def render_safe(text):
-    '''
-    Make sure the given text is safe to pass to an external process.
-    '''
-    return remove_control_chars(remove_unsafe_private_use(text))
-
-
 def __fix_bad_escapes(text):
     """
     Fixes escaped characters that for what ever reason are not implemented
