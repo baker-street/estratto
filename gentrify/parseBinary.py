@@ -205,7 +205,7 @@ def handle_rtf_files(filepath):
         p = Popen(cmd, stdout=PIPE)
         stdout, stderr = p.communicate()
         try:
-            return BeautifulSoup(stdout).text
+            return BeautifulSoup(stdout, 'lxml').text
         except NameError:
             LOG.warning('Attempted to use BeautifulSoup but, ' +
                         'BeautifulSoup (bs4) is not installed,' +
