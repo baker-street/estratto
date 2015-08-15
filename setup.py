@@ -24,8 +24,16 @@ setup(
     license='MIT',
     packages=PACKAGES,
     # zip_safe=False,
-    install_requires=[
-    ],
+    install_requires=['chardet',
+                      'ftfy>=4,<5',
+                      'arrow',
+                      'smart_open',  # TODO (steven_c) phase out smart_open
+                      'beautifulsoup4',
+                      'pathlib',
+                      'docx',
+                      'pdfminer',
+                      'lxml',
+                      ],
 )
 
 """ for cython
