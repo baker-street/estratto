@@ -133,7 +133,7 @@ def email_parse(content,
         try:
             datetime = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
         except(TypeError):
-            datetime = u''
+            datetime = None
         msgbits = {u'subject': auto_unicode_dang_it(subject),
                    u'body': body_text,
                    # 'body_html': body_html,
