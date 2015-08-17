@@ -58,7 +58,7 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
                                           returnraw=True)
         parsedtxtlist = parsedtxtwraw[0]
         txt = parsedtxtwraw[1]
-        info, mime, fype = get_file_info_from_buffer(txt)
+        info, mime, ftype = get_file_info_from_buffer(txt)
         for i, parsedtxt in enumerate(parsedtxtlist):
             if i == 0:
                 emlparsed.append(fit_into_data_mold(parsedtxt=parsedtxt,
@@ -70,7 +70,7 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
                                                     info=info))
             else:
                 txt = parsedtxt['body']
-                info, mime, fype = get_file_info_from_buffer(txt)
+                info, mime, ftype = get_file_info_from_buffer(txt)
                 fname = parsedtxt['filename']
                 for parsedbit in parse_multi_layer_file(uri=fname,
                                                         txt=txt,
@@ -83,12 +83,12 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
             txt = fogj.read()
     parsedtxt = parse_binary_from_string(fdata=txt,
                                          fname=uri)
+    info, mime, ftype = get_file_info_from_buffer(txt)
     if not ftype:
         ftype = uri.split('.')[-1]
     if not parsedtxt:
         parsedtxt = {u'body': u'',
                      u'filename': sane_unicode(uri)}
-    info, mime, fype = get_file_info_from_buffer(txt)
     return [fit_into_data_mold(parsedtxt,
                                txt,
                                uri,
