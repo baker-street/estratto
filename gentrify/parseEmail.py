@@ -35,6 +35,32 @@ EXTRA_ADDRESS_HEADERS = CONFDICT['email_extra_address_headers']
 
 # ----------------------------------------------------------------------------
 # Basic email parsing
+def atch_fname_from_dispositions(dispositions):
+    for param in dispositions[1:]:
+        try:
+            label, name = param.split("=")
+        except(ValueError):
+            label, name, ext = param.split("=")
+            name = name + ext
+            if param:
+                p = param
+            else:
+                p = "Param==None"
+            if name:
+                v = name
+            else:
+                v = "Name==None"
+            if "filename" in label:
+                LOG.debug('EmailPath:\t' + p + '\t' + v)
+        if "filename" in label:
+            name = auto_unicode_dang_it(name)
+            name = name.strip().lower().strip('*'
+                                              ).strip("utf-8''"
+                                                      ).replace('%20',
+                                                                ' ').strip('"')
+            return name
+
+
 def email_parse_attachment(msgpart):  # TODO (steven_c) Make less complex.
     content_disposition = msgpart.get("Content-Disposition", None)
     if content_disposition:
@@ -57,24 +83,28 @@ def email_parse_attachment(msgpart):  # TODO (steven_c) Make less complex.
                           u'filename': fname,
                           # fyi, this is a filename not pointer.
                           }
+            attachment[u'filename'] = atch_fname_from_dispositions(dispositions)
+            """
             for param in dispositions[1:]:
                 try:
-                    name, value = param.split("=")
+                    label, name = param.split("=")
                 except(ValueError):
-                    name, value, ext = param.split("=")
-                    value = value + ext
+                    label, name, ext = param.split("=")
+                    name = name + ext
                     if param:
                         p = param
                     else:
                         p = "Param==None"
-                    if value:
-                        v = value
+                    if name:
+                        v = name
                     else:
-                        v = "Value==None"
-                    LOG.critical('EmailPath:\t' + p + '\t' + v)
-                name = name.strip().lower().strip('*')
-                if name == u"filename":
-                    attachment[u'filename'] = value.replace('"', '')
+                        v = "Name==None"
+                    LOG.debug('EmailPath:\t' + p + '\t' + v)
+                if label == u"filename":
+                    name = name.strip().lower().strip('*').replace('%20', ' ')
+                    name = name.strip('"')
+                    attachment[u'filename'] = name
+                """
             return attachment
     return None
 

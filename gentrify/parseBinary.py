@@ -329,7 +329,7 @@ EXTWARN = """Guessed ext does not match the provided ext.\tguess:{gext}\
 \text:{ext}\tfname:{fname}"""
 
 
-def parse_binary_from_string(fdata, fname=u'', suffix=u''):
+def parse_binary_from_string(fdata, fname=None, suffix=None):
     """
     Must supply fname or suffix (i.e. extension).
     """
@@ -340,7 +340,7 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
         extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
     except KeyError:
         return {u'body': u'',
-                u'filename': u'',  # Consider dropping.
+                u'filename': fname,  # Consider dropping.
                 }
     if extbymime.lower() != suffix.lower():
         LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
@@ -352,4 +352,5 @@ def parse_binary_from_string(fdata, fname=u'', suffix=u''):
                                    function=parse_binary,
                                    suffix=usesuffix)
     filedict['rawbody'] = fdata
+    filedict[u'filename'] = fname
     return filedict
