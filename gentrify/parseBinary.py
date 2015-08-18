@@ -18,6 +18,7 @@ from cStringIO import StringIO
 from magic import from_buffer
 # from os import path
 from os.path import isfile
+from traceback import format_stack
 
 # from xlrd import XLRDError
 
@@ -149,7 +150,15 @@ def convert_pdf_to_txt(_path):
                                                   password=password,
                                                   caching=caching,
                                                   check_extractable=True):
-                        interpreter.process_page(page)
+                        try:
+                            interpreter.process_page(page)
+                        except AttributeError as e:
+                            # TODO (steven_c) remove this and solve the prob.
+                            LOG.error('\t'.join(['File:', _path,
+                                                 'ErrMessage:', e.message,
+                                                 'Traceback:', format_stack(),
+                                                 ]))
+                            continue
                     str_ = retstr.getvalue()
                     if str_:
                         return str_
