@@ -2,9 +2,9 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '7/19/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
-from gentrify import(__title__, __version__, __credits__, __maintainer__,
+from estratto import(__title__, __version__, __credits__, __maintainer__,
                      __email__, __status__)
 __title__
 __version__
@@ -18,7 +18,7 @@ import sys
 import os
 import re
 
-from gentrify import utils
+from estratto import utils
 
 if sys.version_info[0] >= 3:
     unicode = str  # adjusting to python3

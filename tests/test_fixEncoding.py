@@ -2,9 +2,9 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '7/14/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
-from gentrify import(__title__, __version__, __credits__, __maintainer__,
+from estratto import(__title__, __version__, __credits__, __maintainer__,
                      __email__, __status__)
 __title__
 __version__
@@ -17,8 +17,8 @@ __status__
 import sys
 import os
 
-from gentrify import utils
-from gentrify.fixEncoding import(sane_unicode,
+from estratto import utils
+from estratto.fixEncoding import(sane_unicode,
                                  __insane_unicode,
                                  make_unicode_dang_it,
                                  auto_eng_unicode_dang_it,

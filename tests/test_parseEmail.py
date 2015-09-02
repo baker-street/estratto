@@ -2,9 +2,9 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '7/19/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
-from gentrify import(__title__, __version__, __credits__, __maintainer__,
+from estratto import(__title__, __version__, __credits__, __maintainer__,
                      __email__, __status__)
 __title__
 __version__
@@ -16,8 +16,8 @@ __status__
 
 import os
 from json import dump
-from gentrify import(parseEmail, utils)
-from gentrify.parseEmail import email_whole_parse_from_str
+from estratto import(parseEmail, utils)
+from estratto.parseEmail import email_whole_parse_from_str
 
 TEST_DIR = '/'.join(__file__.split('/')[:-1]) + '/'
 os.chdir(TEST_DIR)

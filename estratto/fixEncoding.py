@@ -2,7 +2,7 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
@@ -34,7 +34,7 @@ except(ImportError):
  as robust')
 from ftfy import fix_text
 
-from gentrify.utils import sopen
+from estratto.utils import sopen
 
 if sys.version_info[0] < 3:
     _STRINGTYPES = (basestring,)

@@ -2,7 +2,7 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
@@ -66,9 +66,9 @@ if sys.version_info[0] < 3:
 else:
     from io import StringIO
 
-from gentrify.fixEncoding import auto_unicode_dang_it
-from gentrify import utils
-from gentrify.utils import(write_and_op_on_tmp, get_file_suffixes)
+from estratto.fixEncoding import auto_unicode_dang_it
+from estratto import utils
+from estratto.utils import(write_and_op_on_tmp, get_file_suffixes)
 
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
@@ -83,6 +83,7 @@ MIMETYPES = {'application/pdf': '.pdf',
              'message/rfc822': '.eml',
              'text/html': '.html',
              'application/rtf': '.rtf',
+             'application/zip': '.zip',
              }
 
 
@@ -333,31 +334,41 @@ EXTWARN = """Guessed ext does not match the provided ext.\tguess:{gext}\
 \text:{ext}\tfname:{fname}"""
 
 
-def parse_binary_from_string(fdata, fname=None, suffix=None):
+def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
+                             tryagain=True):
     """
     Must supply fname or suffix (i.e. extension).
     """
     if not suffix:
         suffix = auto_unicode_dang_it('.' +
                                       fname.split('.')[-1]).encode('ascii')
-    try:
-        extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
-    except KeyError:
-        return {u'body': u'',
-                u'filename': fname,  # Consider dropping.
-                }
-    if extbymime.lower() != suffix.lower():
-        LOG.debug(EXTWARN.format(gext=extbymime, ext=suffix, fname=fname))
-    if suffix.lower() in OKEXT:
-        usesuffix = extbymime
-    else:
-        usesuffix = suffix
-    # not good solution, fudges with unprocessed files.
-    # data = auto_unicode_dang_it(auto_normize_byte(fdata, encoding='ascii'),
-    #                             encoding='ascii')
     filedict = write_and_op_on_tmp(data=fdata,
                                    function=parse_binary,
-                                   suffix=usesuffix)
+                                   suffix=suffix)
     filedict['rawbody'] = fdata
     filedict[u'filename'] = fname
+    filedict[u'filesuffix'] = suffix
+    if tryagain and not (len(filedict['body']) > 0):
+        extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
+        if extbymime.lower() in okext:
+            LOG.debug('BinaryDoc came back with 0 len body, trying again ' +
+                      'with ext derived from mimetype\t' +
+                      'Supplied ext:\t' + suffix + '\t' +
+                      'Mime derived ext:\t' + extbymime + '\t' +
+                      'Filename:\t' + str(fname))
+            return parse_binary_from_string(fdata,
+                                            fname=fname,
+                                            suffix=extbymime,
+                                            tryagain=False)
+        else:
+            LOG.debug('BinaryDoc came back with 0 len body, and mime ' +
+                      'derived ext was not in ok exts, giving up.\t' +
+                      'Supplied ext:\t' + suffix + '\t' +
+                      'Mime derived ext:\t' + extbymime + '\t' +
+                      'Filename:\t' + str(fname))
+    else:
+        LOG.debug('BinaryDoc came back with 0 len body, and out of trys, ' +
+                  'giving up.\t' +
+                  'Supplied ext:\t' + suffix + '\t' +
+                  'Filename:\t' + str(fname))
     return filedict

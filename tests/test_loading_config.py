@@ -1,10 +1,10 @@
 # -*- coding: utf-8 -*-
 __author__ = 'Steven Cutting'
-__author_email__ = 'steven.c.projects@gmail.com'
+__author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '7/19/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
-from gentrify import(__title__, __version__, __credits__, __maintainer__,
+from estratto import(__title__, __version__, __credits__, __maintainer__,
                      __email__, __status__)
 __title__
 __version__
@@ -14,7 +14,7 @@ __email__
 __status__
 
 
-from gentrify import(parseEmail, parseBinary)
+from estratto import(parseEmail, parseBinary)
 
 
 def test_email_exts():

@@ -2,7 +2,7 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/20/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
@@ -17,6 +17,7 @@ __status__
 import logging
 LOG = logging.getLogger(__name__)
 
+import os
 import sys
 from tempfile import NamedTemporaryFile
 import json
@@ -33,6 +34,11 @@ else:
     # temp fix, so that 2.7 support wont break
     unicode = str  # adjusting to python3
     _STRINGTYPES = (str, bytes)
+
+
+def file_exts(fname):
+    return '.' + fname.split('.')[-1]
+
 
 # ------------------------------------------------------------------------------
 # Keep this stuff together. Doing it this way so both versions can be
@@ -237,3 +243,9 @@ _norm_dt_tz_na_docstr = ''.join(['\n\n! ! Deprecated ! !\n',
 normize_dtime_tmzn_nrth_am.__doc__ = _norm_dt_tz_na_docstr
 
 # ------------------------------------------------------------------------------
+
+
+def spelunker_gen(rootdir):
+    for dirname, subdirlist, filelist in os.walk(rootdir):
+        for fname in filelist:
+            yield '{}/{}'.format(dirname, fname)

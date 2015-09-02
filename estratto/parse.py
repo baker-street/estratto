@@ -2,7 +2,7 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/23/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
@@ -21,12 +21,12 @@ from magic import from_buffer
 # TODO (steven_c) Replace smart_open!
 from smart_open import smart_open
 
-from gentrify.fixEncoding import(auto_unicode_dang_it, sane_unicode)
-from gentrify.parseBinary import parse_binary_from_string
-# from gentrify.fixEncoding import make_unicode_dang_it
-from gentrify.parseEmail import(is_an_email,
+from estratto.fixEncoding import(auto_unicode_dang_it, sane_unicode)
+from estratto.parseBinary import parse_binary_from_string
+# from estratto.fixEncoding import make_unicode_dang_it
+from estratto.parseEmail import(is_an_email,
                                 email_whole_parse)
-from gentrify import utils
+from estratto import utils
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
 OKEXT = set(utils.load_json(CONFFILE, mode='r')['ok_ext_set'])

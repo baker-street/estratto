@@ -2,9 +2,9 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '7/19/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
-from gentrify import(__title__, __version__, __credits__, __maintainer__,
+from estratto import(__title__, __version__, __credits__, __maintainer__,
                      __email__, __status__)
 __title__
 __version__
@@ -16,10 +16,13 @@ __status__
 
 import sys
 import os
+from os.path import join
 import json
 
-from gentrify import(parse, utils)
-from gentrify.utils import flatten_handle_all
+# import pytest
+
+from estratto import(parse, utils)
+from estratto.utils import flatten_handle_all
 
 if sys.version_info[0] >= 3:
     unicode = str  # adjusting to python3
@@ -27,8 +30,8 @@ if sys.version_info[0] >= 3:
 else:
     _STRINGTYPES = (basestring,)
 
-TEST_DIR = '/'.join(__file__.split('/')[:-1]) + '/'
-os.chdir(TEST_DIR)
+TESTDIR = '/'.join(__file__.split('/')[:-1]) + '/'
+os.chdir(TESTDIR)
 
 
 def test__fit_into_data_mold():
@@ -49,14 +52,16 @@ def test__fit_into_data_mold():
 
 
 def test__parse_multi_layer_file():
-    cached = utils.load_json('sample_parsed_email.json', mode='r')
+    cached = utils.load_json(join(TESTDIR, 'sample_parsed_email.json'),
+                             mode='r')
     prsd = parse.parse_multi_layer_file('sample_enron_email.')
     new = json.loads(json.dumps(prsd))
     assert(new[0]['content']['body'] == cached[0]['content']['body'])
 
 
 def test__parse_multi_layer_file__is_output_all_unicode():
-    doclist = parse.parse_multi_layer_file('sample_enron_email.')
+    doclist = parse.parse_multi_layer_file(join(TESTDIR,
+                                                'sample_enron_email.'))
     for docdict in doclist:
         docdict['content']['attachment']['filename'] = u''
         docdict['rawbody'] = u''
@@ -65,14 +70,16 @@ def test__parse_multi_layer_file__is_output_all_unicode():
                 assert(isinstance(item, unicode))
 
 
-MSSVEML = ('testdata/The_Adventures_of_Sherlock_Holmes/' +
-           'from_gmail_and_libre_office/pg1661.eml')
+MINIEMLWithAttch = ('testdata/The_Adventures_of_Sherlock_Holmes/' +
+                    'from_gmail_and_libre_office/mini/' +
+                    'pg1661-mini_with-attch.eml')
 
 
 def test__parse_large_email_with_large_mix_of_files():
-    doclist = parse.parse_multi_layer_file(MSSVEML)
-    ln = len(doclist[0]['content']['body'])
-    assert(ln > 20)
+    doclist = parse.parse_multi_layer_file(MINIEMLWithAttch)
+    for prt in doclist:
+        if utils.file_exts(prt['filename']).lower() in parse.OKEXT:
+            assert(20 < len(prt['content']['body']))
 
 
 if __name__ == '__main__':

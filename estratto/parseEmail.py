@@ -2,7 +2,7 @@
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/20/2015'
-__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
@@ -35,13 +35,13 @@ from re import(search,
                )
 
 
-from gentrify.fixEncoding import(auto_unicode_dang_it,
+from estratto.fixEncoding import(auto_unicode_dang_it,
                                  sane_unicode,
                                  open_to_unicode)
-from gentrify import utils
-from gentrify.utils import normize_dtime_tmzn_nrth_am
+from estratto import utils
+from estratto.utils import normize_dtime_tmzn_nrth_am
 
-from gentrify.utils import sopen
+# from estratto.utils import sopen
 
 CONFDICT = utils.load_json(dirname(utils.__file__) + '/defconf.json',
                            mode='r')

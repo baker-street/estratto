@@ -1,9 +1,9 @@
 # -*- coding: utf-8 -*-
 """
-gentrify  Copyright (C) 2015  Steven Cutting - License AGPL: gentrify/LICENSE
+estratto  Copyright (C) 2015  Steven Cutting - License AGPL: estratto/LICENSE
 """
 
-from gentrify import(__title__, __version__, __status__)
+from estratto import(__title__, __version__, __status__)
 
 
 from setuptools import setup, find_packages
@@ -29,7 +29,7 @@ setup(name=__title__,
                    'Programming Language :: Python :: 2.7',
                    'Programming Language :: Python :: 3.4',
                    'License :: GNU AGPL',
-                   'Copyright :: gentrify  Copyright (C) 2015  Steven Cutting',
+                   'Copyright :: estratto  Copyright (C) 2015  Steven Cutting',
                    'Status ::' + __status__,
                    ],
       keywords='nlp encoding text plaintext preprocessing',
