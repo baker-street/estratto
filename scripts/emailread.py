@@ -1,9 +1,13 @@
 #!/usr/bin/env python
 # -*- coding: utf-8 -*-
-__title__ = 'ellis_island'
 __author__ = 'Steven Cutting'
-__author_email__ = 'steven.e.cutting@linux.com'
+__author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/21/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from gentrify import(__title__, __version__, __credits__, __maintainer__,
+                     __email__, __status__)
+
 
 import sys
 import random

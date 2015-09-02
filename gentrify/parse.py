@@ -1,12 +1,21 @@
 # -*- coding: utf-8 -*-
-__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/23/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from . import(__title__, __version__, __credits__, __maintainer__, __email__,
+              __status__)
+__title__
+__version__
+__credits__
+__maintainer__
+__email__
+__status__
 
 
-# import tempfile
 from os.path import dirname
+
 from magic import from_buffer
 
 # TODO (steven_c) Replace smart_open!
@@ -20,7 +29,7 @@ from gentrify.parseEmail import(is_an_email,
 from gentrify import utils
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
-OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
+OKEXT = set(utils.load_json(CONFFILE, mode='r')['ok_ext_set'])
 
 
 def get_file_info_from_buffer(txt):  # Consider putting in utils
@@ -51,10 +60,10 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
 
         type: is ether the extension or a set definition, e.g. email.
     """
-    if is_an_email(uri, txt=txt):
+    if is_an_email(uri, text=txt):
         emlparsed = []
         parsedtxtwraw = email_whole_parse(uri,
-                                          txt=txt,
+                                          text=txt,
                                           returnraw=True)
         parsedtxtlist = parsedtxtwraw[0]
         txt = parsedtxtwraw[1]

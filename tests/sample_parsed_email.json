@@ -30,6 +30,7 @@
                     "k..allen@enron.com"
                 ]
             ], 
+            "type": "email",
             "attachment": {
                 "number_of_attachments": 0, 
                 "filename": []

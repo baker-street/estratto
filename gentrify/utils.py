@@ -1,12 +1,23 @@
 # -*- coding: utf-8 -*-
-__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
-__author_email__ = 'steven.e.cutting@linux.com'
+__author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/20/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from . import(__title__, __version__, __credits__, __maintainer__, __email__,
+              __status__)
+__title__
+__version__
+__credits__
+__maintainer__
+__email__
+__status__
+
 
 import logging
 LOG = logging.getLogger(__name__)
 
+import sys
 from tempfile import NamedTemporaryFile
 import json
 import re
@@ -16,6 +27,12 @@ from collections import Iterable
 from arrow.parser import ParserError
 from arrow import get
 
+if sys.version_info[0] < 3:
+    _STRINGTYPES = (basestring,)
+else:
+    # temp fix, so that 2.7 support wont break
+    unicode = str  # adjusting to python3
+    _STRINGTYPES = (str, bytes)
 
 # ------------------------------------------------------------------------------
 # Keep this stuff together. Doing it this way so both versions can be
@@ -51,24 +68,26 @@ except ImportError:
 # ------------------------------------------------------------------------------
 
 
-def sopen(uri, mode='rb', buffering=-1):
+def sopen(uri, mode='r', buffering=-1):
     return open(uri, mode=mode, buffering=buffering)
 
 
-def load_file(uri, mode='rb', buffering=-1):
+def load_file(uri, mode='r', buffering=-1):
     with open(uri, mode=mode, buffering=buffering) as fp:
         return fp.read()
 
 
-def load_json(uri):
-    with sopen(uri) as fp:
+def load_json(uri, mode='r'):
+    with open(uri, mode=mode) as fp:
         return json.load(fp)
 
 
-def write_and_op_on_tmp(data, function, suffix, mode='w+b', tmpdir=None):
-    with NamedTemporaryFile(suffix=suffix, mode=mode, dir=tmpdir) as tmp:
-        tmp.file.write(data)
-        tmp.file.seek(0)
+def write_and_op_on_tmp(data, function, suffix, mode='w', tmpdir=None,
+                        **kwargs):
+    with NamedTemporaryFile(suffix=suffix, mode=mode, dir=tmpdir,
+                            **kwargs) as tmp:
+        tmp.write(data)
+        tmp.seek(0)
         return function(tmp.name)
 
 
@@ -78,7 +97,7 @@ def flatten_dict_tree(dicttree, __keypath=u''):
     Flattens only the dicts in a dict tree.
     """
     newdict = {}
-    for key, value in dicttree.iteritems():
+    for key, value in dicttree.items():
         fullkeypath = __keypath + '-' + key
         if isinstance(value, dict):
             newdict.update(flatten_dict_tree(value, fullkeypath))
@@ -89,7 +108,7 @@ def flatten_dict_tree(dicttree, __keypath=u''):
 
 def flatten_array_like_strct_gen(arraything, dictvalues=False):
     for i in arraything:
-        if isinstance(i, basestring):
+        if isinstance(i, _STRINGTYPES):
             yield i
         elif isinstance(i, dict):
             if dictvalues:
@@ -135,7 +154,7 @@ NA_TIME_ZONE_ABRVS = {u'EDT': u'-0400',
 
 def tz_abv_2_offset(dtimestr, abv2offsetdict=NA_TIME_ZONE_ABRVS):
     res = dtimestr
-    for abv, offset in abv2offsetdict.iteritems():
+    for abv, offset in abv2offsetdict.items():
         res = re.sub(abv, offset, res, flags=re.IGNORECASE)
     return res
 
@@ -210,11 +229,11 @@ def normize_datetime_tmzone(dtimestr,
                                        handle_no_tz=handle_no_tz)
 
 
-normize_datetime_tmzone_north_am = normize_datetime_tmzone
+normize_dtime_tmzn_nrth_am = normize_datetime_tmzone
 _norm_dt_tz_na_docstr = ''.join(['\n\n! ! Deprecated ! !\n',
                                  'Use normize_datetime_tmzone!!\n\n',
                                  normize_datetime_tmzone.__doc__,
                                  ])
-normize_datetime_tmzone_north_am.__doc__ = _norm_dt_tz_na_docstr
+normize_dtime_tmzn_nrth_am.__doc__ = _norm_dt_tz_na_docstr
 
 # ------------------------------------------------------------------------------

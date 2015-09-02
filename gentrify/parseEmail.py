@@ -1,8 +1,18 @@
 # -*- coding: utf-8 -*-
-__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.e.cutting@linux.com'
 __created_on__ = '6/20/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from . import(__title__, __version__, __credits__, __maintainer__, __email__,
+              __status__)
+__title__
+__version__
+__credits__
+__maintainer__
+__email__
+__status__
+
 
 # TODO (steven_c) Clean and optimize.
 # TODO (steven_c) Make code more readable.
@@ -10,9 +20,13 @@ __created_on__ = '6/20/2015'
 import logging
 LOG = logging.getLogger(__name__)
 
+import sys
 from os.path import dirname
 from email.parser import Parser
-from email.Header import decode_header
+if sys.version_info[0] < 3:
+    from email.Header import decode_header
+else:
+    from email.header import decode_header
 from email.utils import parseaddr
 from base64 import b64decode
 from re import(search,
@@ -21,16 +35,26 @@ from re import(search,
                )
 
 
-from gentrify.fixEncoding import auto_unicode_dang_it
+from gentrify.fixEncoding import(auto_unicode_dang_it,
+                                 sane_unicode,
+                                 open_to_unicode)
 from gentrify import utils
-from gentrify.utils import normize_datetime_tmzone_north_am
+from gentrify.utils import normize_dtime_tmzn_nrth_am
+
 from gentrify.utils import sopen
 
-CONFDICT = utils.load_json(dirname(utils.__file__) + '/defconf.json')
+CONFDICT = utils.load_json(dirname(utils.__file__) + '/defconf.json',
+                           mode='r')
 EMAILEXTS = set(CONFDICT['email_ext_set'])
 
 EXTRA_HEADERS = CONFDICT['email_extra_headers']
 EXTRA_ADDRESS_HEADERS = CONFDICT['email_extra_address_headers']
+
+if sys.version_info[0] < 3:
+    _STRINGTYPES = (basestring,)
+else:
+    unicode = str  # adjusting to python3
+    _STRINGTYPES = (str, bytes)
 
 
 # ----------------------------------------------------------------------------
@@ -38,44 +62,43 @@ EXTRA_ADDRESS_HEADERS = CONFDICT['email_extra_address_headers']
 def atch_fname_from_dispositions(dispositions):
     for param in dispositions[1:]:
         try:
-            label, name = param.split("=")
+            label, name = param.split(b"=")
         except(ValueError):
-            label, name, ext = param.split("=")
+            label, name, ext = param.split(b"=")
             name = name + ext
             if param:
                 p = param
             else:
-                p = "Param==None"
+                p = b"Param==None"
             if name:
                 v = name
             else:
-                v = "Name==None"
-            if "filename" in label:
-                LOG.debug('EmailPath:\t' + p + '\t' + v)
-        if "filename" in label:
+                v = b"Name==None"
+            if b"filename" in label:
+                LOG.debug(b'EmailPath:\t' + p + '\t' + v)
+        if b"filename" in label:
             name = auto_unicode_dang_it(name)
-            name = name.strip().lower().strip('*'
-                                              ).strip("utf-8''"
-                                                      ).replace('%20',
-                                                                ' ').strip('"')
+            name = name.strip().lower()
+            name = name.strip(b'*').strip(b"utf-8''").replace(b'%20',
+                                                              b' ').strip(b'"')
             return name
 
 
 def email_parse_attachment(msgpart):  # TODO (steven_c) Make less complex.
-    content_disposition = msgpart.get("Content-Disposition", None)
+    content_disposition = msgpart.get(b"Content-Disposition", None)
     if content_disposition:
-        dispositions = content_disposition.strip().split(";")
+        dispositions = content_disposition.strip().split(b";")
         if bool(content_disposition and
-                dispositions[0].lower() == "attachment"):
+                dispositions[0].lower() == b"attachment"):
             filedata = msgpart.get_payload()
             try:
-                if 'base64' in msgpart.get('Content-Transfer-Encoding',
-                                           None).lower():
+                if b'base64' in msgpart.get(b'Content-Transfer-Encoding',
+                                            None).lower():
                     filedata = b64decode(filedata)
             except(AttributeError, TypeError):
                 return None
             fname = auto_unicode_dang_it(msgpart.get_filename())
-            if match('(Untitled)(.{0,3})(attachment)(.{0,10})(\.txt)', fname):
+            if match(b'(Untitled)(.{0,3})(attachment)(.{0,10})(\.txt)', fname):
                 filedata = u''
 
             attachment = {u'body': filedata,
@@ -84,27 +107,6 @@ def email_parse_attachment(msgpart):  # TODO (steven_c) Make less complex.
                           # fyi, this is a filename not pointer.
                           }
             attachment[u'filename'] = atch_fname_from_dispositions(dispositions)
-            """
-            for param in dispositions[1:]:
-                try:
-                    label, name = param.split("=")
-                except(ValueError):
-                    label, name, ext = param.split("=")
-                    name = name + ext
-                    if param:
-                        p = param
-                    else:
-                        p = "Param==None"
-                    if name:
-                        v = name
-                    else:
-                        v = "Name==None"
-                    LOG.debug('EmailPath:\t' + p + '\t' + v)
-                if label == u"filename":
-                    name = name.strip().lower().strip('*').replace('%20', ' ')
-                    name = name.strip('"')
-                    attachment[u'filename'] = name
-                """
             return attachment
     return None
 
@@ -127,7 +129,7 @@ def email_parse(content,
     Converts 'Date' to UTC.
     """
     p = Parser()
-    msgobj = p.parsestr(content)
+    msgobj = p.parsestr(str(content))
     if msgobj['Subject'] is not None:
         decodefrag = decode_header(msgobj['Subject'])
         subj_fragments = []
@@ -161,7 +163,7 @@ def email_parse(content,
                                                   'replace')
     try:
         try:
-            datetime = unicode(normize_datetime_tmzone_north_am(msgobj['date']))
+            datetime = sane_unicode(normize_dtime_tmzn_nrth_am(msgobj['date']))
         except(TypeError):
             datetime = None
         msgbits = {u'subject': auto_unicode_dang_it(subject),
@@ -196,7 +198,7 @@ def email_parse(content,
 
 # ----------------------------------------------------------------------------
 # Testing for emails
-def is_an_email_from_cont(txt):
+def is_an_email_from_cont(text):
     """
     Tests if a string is an email (mime data structure) by checking if the
     string contains:
@@ -204,9 +206,17 @@ def is_an_email_from_cont(txt):
         From:
         Subject:
     """
-    return bool(bool(search('Mime-Version\:', txt, flags=IGNORECASE)) and
-                bool(search('From\:', txt, flags=IGNORECASE)) and
-                bool(search('Subject\:', txt, flags=IGNORECASE)))
+    if isinstance(text, _STRINGTYPES):
+        if isinstance(text, unicode):
+            txt = text.encode('utf-8')
+        else:
+            txt = text
+        return bool(bool(search(b'Mime-Version\:', txt, flags=IGNORECASE)) and
+                    bool(search(b'From\:', txt, flags=IGNORECASE)) and
+                    bool(search(b'Subject\:', txt, flags=IGNORECASE)))
+    else:
+        raise TypeError("'text' is not text, it's not a string type. It is:\t" +
+                        type(text))
 
 
 def is_an_email_from_ext(fname, extset=EMAILEXTS):
@@ -220,20 +230,20 @@ def is_an_email_from_ext(fname, extset=EMAILEXTS):
     return fname.lower().endswith(tuple(extset))
 
 
-def is_an_email(fname, txt=None, extset=EMAILEXTS):
+def is_an_email(fname, text=None, extset=EMAILEXTS):
     """
     Tests if a file is and email.
     First using the files extension using the extensions in extset.
-    Next using the contents of the file (txt).
-    If txt (the contents) is not supplied the function will load the file.
+    Next using the contents of the file (text).
+    If text (the contents) is not supplied the function will load the file.
     """
     if not is_an_email_from_ext(fname, extset):
         return False
     else:
-        if txt is None:
-            with open(fname) as fobj:
-                txt = fobj.read()
-    return is_an_email_from_cont(txt)
+        if text is None:
+            with open(fname, 'r+b') as fobj:
+                text = fobj.read()
+    return is_an_email_from_cont(text)
 
 
 # ----------------------------------------------------------------------------
@@ -243,25 +253,28 @@ def email_whole_parse_from_str(text):
     Parses email from string and its attachments.
     Returns attachments as both raw and plain text (if possible).
     """
+    if not is_an_email_from_cont(text):
+        raise TypeError('text does not contain an email.')
     emailtuple = email_parse(text)
-    parsedemaillist = [emailtuple[0]]
-    parsedemaillist.extend(emailtuple[1])
-    return parsedemaillist
+    actulemail = emailtuple[0]
+    actulemail[u'type'] = u'email'
+    parsedemaillist = [actulemail]
+    parsedemaillist.extend(emailtuple[1])  # adding on the attachments.
+    return tuple(parsedemaillist)
 
 
-def email_whole_parse(uri, txt=None, returnraw=False):
+def email_whole_parse(uri, text=None, returnraw=False):
     """
     Parses email from file and its attachments.
     Returns attachments as both raw and plain text (if possible).
 
     Not yet, but will handle s3 and HDFS.
     """
-    if txt is None:
-        with sopen(uri) as fobj:
-            txt = fobj.read()
-    emailtuple = email_whole_parse_from_str(txt)
+    if text is None:
+        text = open_to_unicode(uri)
+    emailtuple = email_whole_parse_from_str(text)
     emailtuple[0][u'filename'] = auto_unicode_dang_it(uri)
     if returnraw:
-        return emailtuple, txt
+        return emailtuple, text
     else:
         return emailtuple

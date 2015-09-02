@@ -1,14 +1,25 @@
 # -*- coding: utf-8 -*-
-__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from . import(__title__, __version__, __credits__, __maintainer__, __email__,
+              __status__)
+__title__
+__version__
+__credits__
+__maintainer__
+__email__
+__status__
 
+import logging
+LOG = logging.getLogger(__name__)
+
+import sys
 from functools import partial
 from collections import(Mapping, Iterable)
 import unicodedata
-import logging
-LOG = logging.getLogger(__name__)
 
 try:
     import cchardet as chardet
@@ -23,13 +34,22 @@ except(ImportError):
  as robust')
 from ftfy import fix_text
 
+from gentrify.utils import sopen
+
+if sys.version_info[0] < 3:
+    _STRINGTYPES = (basestring,)
+else:
+    # temp fix, so that 2.7 support wont break
+    unicode = str  # adjusting to python3
+    _STRINGTYPES = (str, bytes)
+
 
 def verify_unicode(text):
     """
     Checks if text is unicode, if it's not, an error is raised.
     """
     if not isinstance(text, unicode):
-        if isinstance(text, str):
+        if isinstance(text, bytes):
             raise TypeError('Input text should be a unicode string, not byte.')
         else:
             raise TypeError('Input should be a unicode string.' +
@@ -74,9 +94,12 @@ def __replace_misc_text_bits(text):
 
 def test_ascii(text):
     try:
-        unicode(text,
-                'ascii',
-                errors='strict').encode('ascii', errors='strict')
+        if isinstance(text, unicode):
+            txt = text
+        else:
+            # using bytes on text to ensure that text is text
+            txt = bytes(text).decode(encoding='ascii', errors='strict')
+        txt = txt.encode('ascii', errors='strict')
         return True
     except(UnicodeEncodeError):
         return False
@@ -98,7 +121,7 @@ def ascii_only(text, errors='strict'):
         asciitext = text.encode('ascii', errors=errors)
         if test_ascii(asciitext):
             return asciitext
-    except UnicodeEncodeError, e:
+    except UnicodeEncodeError as e:
         _except = e
     try:
         try:
@@ -107,7 +130,7 @@ def ascii_only(text, errors='strict'):
                 return asciitext
         except NameError:
             LOG.warning('Install unidecode to make ascii_only more robust.')
-    except UnicodeEncodeError, e:
+    except UnicodeEncodeError as e:
         _except = e
     _except.reason = ''.join([_except.reason,
                               ' -- ascii_only not able to change',
@@ -131,6 +154,9 @@ def normize_text(text, asciionly=False):
     ntext = __fix_bad_escapes(ntext)
     if asciionly:
         ntext = ascii_only(ntext)
+    if not isinstance(ntext, unicode):
+        # using bytes on ntext to ensure that ntext is text
+        ntext = bytes(ntext).decode()
     return ntext
 
 
@@ -162,23 +188,28 @@ def sane_unicode(text, encoding='utf-8', errors='strict',
     """
     if isinstance(text, unicode):
         unitext = text
-        encoding = 'unicode'
+        encdng = 'unicode'
     else:
+        # Using bytes on ntext to ensure that ntext is text
+        txt = bytes(text)
         try:
             # Best possible scenario. If the strictest mode doesn't work, let
             # chardet guess at the encoding (in case the provided is incorrect)
             # and use the user provided method of handling errors.
-            unitext = unicode(text, encoding, errors="strict")
+            unitext = bytes(txt).decode(encoding=encoding, errors="strict")
+            encdng = encoding
         except(UnicodeDecodeError, LookupError):
-            detection = chardet.detect(text)
-            encoding = detection.get('encoding')
-            unitext = unicode(text, encoding, errors=errors)
+            detection = chardet.detect(txt)
+            encdng = detection.get('encoding')
+            unitext = bytes(txt).decode(encoding=encdng, errors=errors)
     if normize:
         unitext = normize_text(unitext, asciionly=asciionly)
     elif clean:
         unitext = fix_text(unitext)
+    if not isinstance(unitext, unicode):
+        unitext = bytes(unitext).decode(encoding)
     if returnencoding:
-        return unitext, encoding
+        return unitext, encdng
     else:
         return unitext
 
@@ -230,9 +261,10 @@ def make_unicode_dang_it(text,
     """
     Make text unicode Hell or High Water.
 
-    +  normize: if True, normalizes the unicode characters.
-    +  asciionly: if True changes all characters to their closest
+    +  normize: False - if True, normalizes the unicode characters.
+    +  asciionly: False - if True changes all characters to their closest
             ASCII representation. Only applies if normize is True.
+    +  insureencode: False - if 'True' will test if the text can be re-encoded.
 
     If this can't decode the text, then the text really should be inspected
     more closely as it might not even be text.
@@ -249,7 +281,7 @@ def make_unicode_dang_it(text,
                                      returnencoding=True,
                                      normize=normize,
                                      asciionly=asciionly)
-    except UnicodeDecodeError:
+    except(UnicodeDecodeError):
         return make_unicode_dang_it(__insane_unicode(text),
                                     encoding=encoding,
                                     errors=errors,
@@ -259,7 +291,7 @@ def make_unicode_dang_it(text,
                                     insureencode=insureencode)
     if insureencode:
         try:
-            uni = unicode(uni.encode('utf-8'), 'utf-8', errors='replace')
+            uni = uni.encode('utf-8').decode(encoding='utf-8', errors='replace')
         except(UnicodeDecodeError):
             uni = __insane_unicode(__insane_str(uni, encoding='utf-8'))
     if returnencoding:
@@ -286,7 +318,7 @@ def auto_eng_unicode_dang_it(text,
     relating to encoding, while operating on the text.
     !!
     """
-    if isinstance(text, unicode) or isinstance(text, str):
+    if isinstance(text, _STRINGTYPES):
         return make_unicode_dang_it(text,
                                     encoding,
                                     errors,
@@ -320,6 +352,8 @@ def make_byte(text, errors='strict', hohw=False, normize=False, asciionly=False,
             normize = True
         unitext = sane_unicode(text, encoding='utf-8', errors=errors,
                                normize=normize, asciionly=asciionly)
+    else:
+        unitext = text
     try:
         return unitext.encode(encoding, errors=errors)
     except(UnicodeDecodeError):
@@ -333,10 +367,10 @@ def auto_normize_byte(text, encoding='utf-8', errors='replace'):
 def convert_datastruct_text(data, convertfunc=unicode):
     convert_ds_text = partial(convert_datastruct_text,
                               convertfunc=convertfunc)
-    if isinstance(data, basestring):
+    if isinstance(data, _STRINGTYPES):
         return convertfunc(data)
     elif isinstance(data, Mapping):
-        return dict(map(convert_ds_text, data.iteritems()))
+        return dict(map(convert_ds_text, data.items()))
     elif isinstance(data, Iterable):
         return type(data)(map(convert_ds_text, data))
     else:
@@ -346,3 +380,15 @@ convert_datastruct_text_uni = partial(convert_datastruct_text,
                                       convertfunc=sane_unicode)
 convert_datastruct_text_str = partial(convert_datastruct_text,
                                       convertfunc=make_byte)
+
+
+def open_to_unicode(uri):
+    """
+    Made for py3.
+    """
+    try:
+        with sopen(uri, mode='r') as fp:
+            return fp.read()
+    except UnicodeDecodeError:
+        with sopen(uri, mode='r+b') as fp:
+            return sane_unicode(fp.read())

@@ -1,27 +1,35 @@
 # -*- coding: utf-8 -*-
-__title__ = 'gentrify'
 __author__ = 'Steven Cutting'
 __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
+__copyright__ = "gentrify  Copyright (C) 2015  Steven Cutting"
+__license__ = "AGPL"
+from . import(__title__, __version__, __credits__, __maintainer__, __email__,
+              __status__)
+__title__
+__version__
+__credits__
+__maintainer__
+__email__
+__status__
+
 
 # TODO (steven_c) Continue cleaning and optimizing.
 # TODO (steven_c) Continue making code more readable.
 
+import sys
 import logging
 LOG = logging.getLogger(__name__)
 
-from os.path import dirname
+from os.path import dirname, isfile
 import zipfile
 from subprocess import Popen, PIPE
 import re
-from cStringIO import StringIO
-from magic import from_buffer
-# from os import path
-from os.path import isfile
 from traceback import format_stack
 
-# from xlrd import XLRDError
 
+# from xlrd import XLRDError
+from magic import from_buffer
 try:
     from docx import Document
 except ImportError:
@@ -51,13 +59,20 @@ except ImportError:
                 'will not be able to parse XML and HTML.')
 
 
+# ------------------------------------------------------------------------------
+# Handle python3 conversion
+if sys.version_info[0] < 3:
+    from cStringIO import StringIO
+else:
+    from io import StringIO
+
 from gentrify.fixEncoding import auto_unicode_dang_it
 from gentrify import utils
 from gentrify.utils import(write_and_op_on_tmp, get_file_suffixes)
 
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
-OKEXT = set(utils.load_json(CONFFILE)['ok_ext_set'])
+OKEXT = set(utils.load_json(CONFFILE, mode='r')['ok_ext_set'])
 DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
 DOTX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.template'
 MIMETYPES = {'application/pdf': '.pdf',
@@ -168,7 +183,7 @@ def convert_pdf_to_txt(_path):
                     return u''
 
 
-def handle_pdf_files(filepath):
+def handle_pdf_files_pdfminer(filepath):
         try:
             try:
                 return convert_pdf_to_txt(filepath).replace('\x0c\x0c', '')
@@ -184,6 +199,33 @@ def handle_pdf_files(filepath):
             LOG.warning('Attempted to use pdfminer but, ' +
                         'pdfminer not installed, install to extract PDF text.')
             return u''
+
+
+def handle_ebook_files(filepath):
+    try:
+        cmd = ['mudraw', '-F', 'text', filepath]
+        p = Popen(cmd, stdout=PIPE)
+        stdout, stderr = p.communicate()
+        return stdout
+    except OSError:
+        LOG.warning('The mudraw command is not installed, ' +
+                    "will not be able to extract text from ebook files " +
+                    "and pdf's")
+        return u''
+
+
+def handle_pdf_files(filepath, mudraw=True):
+    """
+    if mudraw is True then 'mudraw' will be used to extract pdf text.
+    Else, 'pdfminer' will be used.
+    """
+    if mudraw:
+        txt = handle_ebook_files(filepath)
+        if not txt:
+            return handle_pdf_files(filepath, mudraw=False)
+    else:
+        txt = handle_pdf_files_pdfminer(filepath)
+    return txt
 
 
 def handle_doc_files(filepath):
@@ -243,6 +285,9 @@ BFILEHANDLEDICT = {u'.doc': handle_doc_files,
                    u'.docx': handle_docx_files,
                    u'.pdf': handle_pdf_files,
                    u'.rtf': handle_rtf_files,
+                   u'.xps': handle_ebook_files,
+                   u'.epub': handle_ebook_files,
+                   u'.cbz': handle_ebook_files,
                    }
 
 
@@ -257,56 +302,6 @@ def document_to_text(filepath, okext=OKEXT):
         if text:
             return auto_unicode_dang_it(text)
     return u''
-
-
-# TODO (steven_c) "_OLD_document_to_text" Work on removing for good.
-def _OLD_document_to_text(filepath):
-    ext = get_file_suffixes(filepath).lower()
-    # ----------------------
-    # Text doc files
-    if ext == ".doc":
-        return handle_doc_files(filepath)
-    elif ext == ".docx":
-        return handle_docx_files(filepath)
-    elif ext == ".odt":  # Not supporting currently
-        return handle_odt_files(filepath)
-    elif ext == ".rtf":
-        return handle_rtf_files(filepath)
-    # ----------------------
-    # Other
-    elif ext == ".pdf":
-        return handle_pdf_files(filepath)
-    else:
-        return auto_textract(filepath)
-    # will handle zips another way
-    # elif filepath[-4:].lower() == ".zip":
-    #    with TempDir() as dastmpdir:
-    #        try:
-    #            extractedfiles = handle_zip_files(filepath, dastmpdir)
-    #            return [document_to_text('{}/{}'.format(dastmpdir,path))
-    #                    for path in extractedfiles]
-    #        except zipfile.BadZipfile:
-    #            return None
-    # ----------------------  # Might add back in later
-    # SpreadSheets
-    # elif filepath.lower().endswith((".xls", ".xlsx")):
-        # Not supporting currently
-        # return None
-        # try:
-        #     return auto_textract(filepath)
-        # except (XLRDError,
-        #        IndexError,
-        #        AssertionError,
-        #        OverflowError):
-        #    return None
-        # try:
-        #    # cmd = ['x_x', filepath]
-        #    # p = Popen(cmd, stdout=PIPE)
-        #    # stdout, stderr = p.communicate()
-        #    # return stdout.decode('ascii', 'ignore')
-        #     return pandas_print_full(pandas.read_excel(filepath))
-        # except (XLRDError,IndexError,AssertionError,OverflowError):
-        #     return None
 
 
 def extract_text(filename):
@@ -357,6 +352,9 @@ def parse_binary_from_string(fdata, fname=None, suffix=None):
         usesuffix = extbymime
     else:
         usesuffix = suffix
+    # not good solution, fudges with unprocessed files.
+    # data = auto_unicode_dang_it(auto_normize_byte(fdata, encoding='ascii'),
+    #                             encoding='ascii')
     filedict = write_and_op_on_tmp(data=fdata,
                                    function=parse_binary,
                                    suffix=usesuffix)
