@@ -94,6 +94,11 @@ def test__parse_binary__compare_docs__doc_docx_OpenOfficXML():
     compr_binary_parse_on_files(fnamelist)
 
 
+def test__parse_binary__compare_docs__doc_docx_OpenOfficXML():
+    fnamelist = list(spelunker_gen(join(TESTDIR, 'doc/pure_doc')))
+    compr_binary_parse_on_files(fnamelist)
+
+
 if __name__ == '__main__':
     test__parse_binary__parse_doc__test_if_run_and_len_20()
     test__parse_binary__parse_docx__test_if_run_and_len_20()
