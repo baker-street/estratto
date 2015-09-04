@@ -108,8 +108,9 @@ def auto_textract(filepath):
             else:
                 return u''
         except NameError:
-            log = 'textract not installed, install for robust text extraction.'
-            LOG.warning('Attempted to use textract but, ' + log)
+            LOG.warning('Attempted to use textract but, ' +
+                        'textract not installed, install for ' +
+                        'robust text extraction.')
             return u''
     except (ExtensionNotSupported,
             IndexError,
@@ -223,6 +224,7 @@ def handle_pdf_files(filepath, mudraw=True):
     if mudraw:
         txt = handle_ebook_files(filepath)
         if not txt:
+            LOG.debug('falling back to pdfminer')
             return handle_pdf_files(filepath, mudraw=False)
     else:
         txt = handle_pdf_files_pdfminer(filepath)
@@ -243,12 +245,15 @@ def handle_doc_files(filepath):
 
 def handle_docx_files(filepath):
     try:
-        document = Document(filepath)
-        return '\n\n'.join([graph.text for graph in document.paragraphs])
+        try:
+            document = Document(filepath)
+            return '\n\n'.join([graph.text for graph in document.paragraphs])
+        except IOError:
+            LOG.debug('Docx could not extract the files text.')
     except NameError:
         LOG.warning('Attempted to use docx but, ' +
                     "docx not installed, install to extract '.docx' text.")
-        return u''
+    return u''
 
 
 def handle_rtf_files(filepath):
@@ -342,33 +347,46 @@ def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
     if not suffix:
         suffix = auto_unicode_dang_it('.' +
                                       fname.split('.')[-1]).encode('ascii')
+    if suffix.lower() not in okext:
+        if not fname:
+            fname = ''
+        return {u'body': '',
+                u'filename': fname,
+                }
     filedict = write_and_op_on_tmp(data=fdata,
                                    function=parse_binary,
                                    suffix=suffix)
     filedict['rawbody'] = fdata
     filedict[u'filename'] = fname
-    filedict[u'filesuffix'] = suffix
+    # filedict[u'filesuffix'] = suffix
     if tryagain and not (len(filedict['body']) > 0):
-        extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
-        if extbymime.lower() in okext:
+        try:
+            extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
+        except KeyError:
+            extbymime = None
+        if extbymime and (extbymime.lower() in okext):
+            # (TODO) steven_c Work on making logs more DRY
             LOG.debug('BinaryDoc came back with 0 len body, trying again ' +
                       'with ext derived from mimetype\t' +
                       'Supplied ext:\t' + suffix + '\t' +
                       'Mime derived ext:\t' + extbymime + '\t' +
                       'Filename:\t' + str(fname))
-            return parse_binary_from_string(fdata,
-                                            fname=fname,
-                                            suffix=extbymime,
-                                            tryagain=False)
+            try:
+                return parse_binary_from_string(fdata,
+                                                fname=fname,
+                                                suffix=extbymime,
+                                                tryagain=False)
+            except ValueError:
+                LOG.debug('BinaryDoc came back with 0 len body, and mime ' +
+                          'derived ext resulted in ValueError, giving up.\t' +
+                          'Supplied ext:\t' + suffix + '\t' +
+                          'Mime derived ext:\t' + str(extbymime) + '\t' +
+                          'Filename:\t' + str(fname))
         else:
-            LOG.debug('BinaryDoc came back with 0 len body, and mime ' +
-                      'derived ext was not in ok exts, giving up.\t' +
-                      'Supplied ext:\t' + suffix + '\t' +
-                      'Mime derived ext:\t' + extbymime + '\t' +
-                      'Filename:\t' + str(fname))
+            pass
     else:
-        LOG.debug('BinaryDoc came back with 0 len body, and out of trys, ' +
-                  'giving up.\t' +
-                  'Supplied ext:\t' + suffix + '\t' +
-                  'Filename:\t' + str(fname))
+        pass
+    # checking that they are there
+    filedict['body']
+    filedict['filename']
     return filedict
