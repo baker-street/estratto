@@ -233,12 +233,11 @@ def handle_pdf_files(filepath, mudraw=True):
 
 def handle_doc_files(filepath):
     try:
-        cmd = ['antiword', filepath]
-        p = Popen(cmd, stdout=PIPE)
+        p = Popen(['antiword', filepath], stdout=PIPE)
         stdout, stderr = p.communicate()
         return stdout
-    except OSError:
-        LOG.warning('The antiword command is not installed, ' +
+    except IOError:
+        LOG.warning('the antiword program is not installed, ' +
                     "will not be able to extract text from '.doc' files.")
         return u''
 
@@ -254,6 +253,17 @@ def handle_docx_files(filepath):
         LOG.warning('Attempted to use docx but, ' +
                     "docx not installed, install to extract '.docx' text.")
     return u''
+
+
+def handle_odt_files(filepath):
+    try:
+        p = Popen(['odt2txt', filepath], stdout=PIPE)
+        stdout, stderr = p.communicate()
+        return stdout
+    except OSError:
+        LOG.warning('The odt2txt program is not installed, ' +
+                    "will not be able to extract text from '.odt' files.")
+        return u''
 
 
 def handle_rtf_files(filepath):
@@ -274,21 +284,9 @@ def handle_rtf_files(filepath):
         return u''
 
 
-def handle_odt_files(filepath):
-    return u''
-    # try:
-    #     # cmd = ['odt2txt', filepath]
-    #     # p = Popen(cmd, stdout=PIPE)
-    #     # stdout, stderr = p.communicate()
-    #     # return stdout.decode('ascii', 'ignore')
-    # except OSError:
-    #     LOG.warning('The odt2txt command is not installed,' +
-    #                 "will not be able to extract text from '.odt' files.")
-    #     return u''
-
-
 BFILEHANDLEDICT = {u'.doc': handle_doc_files,
                    u'.docx': handle_docx_files,
+                   u'.odt': handle_odt_files,
                    u'.pdf': handle_pdf_files,
                    u'.rtf': handle_rtf_files,
                    u'.xps': handle_ebook_files,
@@ -344,9 +342,11 @@ def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
     """
     Must supply fname or suffix (i.e. extension).
     """
-    if not suffix:
+    if fname and (not suffix):
         suffix = auto_unicode_dang_it('.' +
                                       fname.split('.')[-1]).encode('ascii')
+    else:
+        suffix = MIMETYPES[from_buffer(fdata, mime=True)]
     if suffix.lower() not in okext:
         if not fname:
             fname = ''
@@ -365,19 +365,13 @@ def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
         except KeyError:
             extbymime = None
         if extbymime and (extbymime.lower() in okext):
-            # (TODO) steven_c Work on making logs more DRY
-            LOG.debug('BinaryDoc came back with 0 len body, trying again ' +
-                      'with ext derived from mimetype\t' +
-                      'Supplied ext:\t' + suffix + '\t' +
-                      'Mime derived ext:\t' + extbymime + '\t' +
-                      'Filename:\t' + str(fname))
             try:
                 return parse_binary_from_string(fdata,
                                                 fname=fname,
                                                 suffix=extbymime,
                                                 tryagain=False)
             except ValueError:
-                LOG.debug('BinaryDoc came back with 0 len body, and mime ' +
+                LOG.debug('body len=0, and mime ' +
                           'derived ext resulted in ValueError, giving up.\t' +
                           'Supplied ext:\t' + suffix + '\t' +
                           'Mime derived ext:\t' + str(extbymime) + '\t' +
@@ -386,7 +380,4 @@ def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
             pass
     else:
         pass
-    # checking that they are there
-    filedict['body']
-    filedict['filename']
     return filedict
