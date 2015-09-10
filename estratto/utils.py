@@ -27,6 +27,7 @@ from collections import Iterable
 
 from arrow.parser import ParserError
 from arrow import get
+from magic import from_buffer
 
 if sys.version_info[0] < 3:
     _STRINGTYPES = (basestring,)
@@ -34,6 +35,27 @@ else:
     # temp fix, so that 2.7 support wont break
     unicode = str  # adjusting to python3
     _STRINGTYPES = (str, bytes)
+
+
+DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
+DOTX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.template'
+MIMETYPES = {'application/pdf': '.pdf',
+             'application/msword': '.doc',
+             DOCX: '.docx',
+             DOTX: '.dotx',
+             'text/plain': '.txt',
+             'message/rfc822': '.eml',
+             'text/html': '.html',
+             'application/rtf': '.rtf',
+             'application/zip': '.zip',
+             }
+
+
+def guess_ext_from_mime(text, mimetypes=MIMETYPES, **xargs):
+    """
+    mimetypes - should be a dict that maps mime types to extensions.
+    """
+    return mimetypes[from_buffer(text, mime=True)]
 
 
 def file_exts(fname):
