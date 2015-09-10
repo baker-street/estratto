@@ -19,10 +19,6 @@ from os.path import dirname
 from magic import from_buffer
 from types import NoneType
 
-
-# TODO (steven_c) Replace smart_open!
-# TODO (steven_c) Replace smart_open!
-
 from estratto.fixEncoding import(auto_unicode_dang_it, sane_unicode)
 from estratto.parseBinary import parse_binary
 # from estratto.fixEncoding import make_unicode_dang_it
