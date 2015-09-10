@@ -4,6 +4,7 @@ __author_email__ = 'steven.c.projects@gmail.com'
 __created_on__ = '6/12/2015'
 __copyright__ = "estratto  Copyright (C) 2015  Steven Cutting"
 __license__ = "AGPL"
+
 from . import(__title__, __version__, __credits__, __maintainer__, __email__,
               __status__)
 __title__
@@ -12,10 +13,6 @@ __credits__
 __maintainer__
 __email__
 __status__
-
-
-# TODO (steven_c) Continue cleaning and optimizing.
-# TODO (steven_c) Continue making code more readable.
 
 import sys
 import logging
@@ -29,7 +26,6 @@ from traceback import format_stack
 
 
 # from xlrd import XLRDError
-from magic import from_buffer
 try:
     from docx import Document
 except ImportError:
@@ -63,28 +59,21 @@ except ImportError:
 # Handle python3 conversion
 if sys.version_info[0] < 3:
     from cStringIO import StringIO
+    from os import devnull
+    DEVNULL = open(devnull, 'wb')
 else:
+    from subprocess import DEVNULL
     from io import StringIO
 
 from estratto.fixEncoding import auto_unicode_dang_it
 from estratto import utils
-from estratto.utils import(write_and_op_on_tmp, get_file_suffixes)
+from estratto.utils import(write_and_op_on_tmp,
+                           get_file_suffixes,
+                           guess_ext_from_mime)
 
 
 CONFFILE = dirname(utils.__file__) + '/defconf.json'
 OKEXT = set(utils.load_json(CONFFILE, mode='r')['ok_ext_set'])
-DOCX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.document'
-DOTX = 'application/vnd.openxmlformats-officedocument.wordprocessingml.template'
-MIMETYPES = {'application/pdf': '.pdf',
-             'application/msword': '.doc',
-             DOCX: '.docx',
-             DOTX: '.dotx',
-             'text/plain': '.txt',
-             'message/rfc822': '.eml',
-             'text/html': '.html',
-             'application/rtf': '.rtf',
-             'application/zip': '.zip',
-             }
 
 
 def handle_zip_files(zippath, tmpdir):
@@ -206,7 +195,7 @@ def handle_pdf_files_pdfminer(filepath):
 def handle_ebook_files(filepath):
     try:
         cmd = ['mudraw', '-F', 'text', filepath]
-        p = Popen(cmd, stdout=PIPE)
+        p = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = p.communicate()
         return stdout
     except OSError:
@@ -233,7 +222,7 @@ def handle_pdf_files(filepath, mudraw=True):
 
 def handle_doc_files(filepath):
     try:
-        p = Popen(['antiword', filepath], stdout=PIPE)
+        p = Popen(['antiword', filepath], stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = p.communicate()
         return stdout
     except IOError:
@@ -257,7 +246,7 @@ def handle_docx_files(filepath):
 
 def handle_odt_files(filepath):
     try:
-        p = Popen(['odt2txt', filepath], stdout=PIPE)
+        p = Popen(['odt2txt', filepath], stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = p.communicate()
         return stdout
     except OSError:
@@ -269,7 +258,7 @@ def handle_odt_files(filepath):
 def handle_rtf_files(filepath):
     try:
         cmd = ['unrtf', filepath]
-        p = Popen(cmd, stdout=PIPE)
+        p = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = p.communicate()
         try:
             return BeautifulSoup(stdout, 'lxml').text
@@ -308,7 +297,7 @@ def document_to_text(filepath, okext=OKEXT):
     return u''
 
 
-def extract_text(filename):
+def parse_binary_from_file(filename):
     if isfile(filename):
         txt = document_to_text(filename)
         if txt is None:
@@ -323,53 +312,52 @@ def extract_text(filename):
         raise ValueError('filename did not lead to a file')
 
 
-def parse_binary(fname, extset=OKEXT):
-    if not fname.lower().endswith(tuple(extset)):
-        return {u'body': u'',
-                u'filename': fname,  # Consider dropping.
-                }
-    else:
-        return {u'body': auto_unicode_dang_it(extract_text(fname)),
-                u'filename': fname,  # Consider dropping.
-                }
-
-EXTWARN = """Guessed ext does not match the provided ext.\tguess:{gext}\
-\text:{ext}\tfname:{fname}"""
-
-
-def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
-                             tryagain=True):
+def parse_binary_from_string(string, suffix=None, **xargs):
     """
-    Must supply fname or suffix (i.e. extension).
+    suffix = extension
     """
-    if fname and (not suffix):
+    if not suffix:
+        LOG.debug('Extension not provided, trying guess based on mime time.')
+        suffix = guess_ext_from_mime(string)
+    return write_and_op_on_tmp(data=string,
+                               function=parse_binary_from_file,
+                               suffix=suffix)
+
+
+def parse_binary(string=None, fname=None, suffix=None, okext=OKEXT,
+                 tryagain=True, **xargs):
+    """
+    Parse a binary file or string.
+    """
+    stringbool = bool(string)
+    if (not stringbool) and bool(fname) and (get_file_suffixes(fname) in okext):
+        return parse_binary_from_file(fname)
+    elif fname and (not suffix) and stringbool:
         suffix = auto_unicode_dang_it('.' +
                                       fname.split('.')[-1]).encode('ascii')
+    elif (not suffix) and stringbool:
+        suffix = guess_ext_from_mime(string)
     else:
-        suffix = MIMETYPES[from_buffer(fdata, mime=True)]
+        if (suffix not in okext) or (fname and
+                                     (get_file_suffixes(fname) not in okext)):
+            return None
+        else:
+            raise ValueError('Did not provide string or fname')
+
     if suffix.lower() not in okext:
         if not fname:
             fname = ''
-        return {u'body': '',
-                u'filename': fname,
-                }
-    filedict = write_and_op_on_tmp(data=fdata,
-                                   function=parse_binary,
-                                   suffix=suffix)
-    filedict['rawbody'] = fdata
-    filedict[u'filename'] = fname
-    # filedict[u'filesuffix'] = suffix
-    if tryagain and not (len(filedict['body']) > 0):
+        return None
+    prsd = parse_binary_from_string(string=string, suffix=suffix)
+    if tryagain and not (len(prsd) > 0):
         try:
-            extbymime = MIMETYPES[from_buffer(fdata, mime=True)]
+            extbymime = guess_ext_from_mime(string)
         except KeyError:
             extbymime = None
         if extbymime and (extbymime.lower() in okext):
             try:
-                return parse_binary_from_string(fdata,
-                                                fname=fname,
-                                                suffix=extbymime,
-                                                tryagain=False)
+                return parse_binary_from_string(string,
+                                                suffix=extbymime)
             except ValueError:
                 LOG.debug('body len=0, and mime ' +
                           'derived ext resulted in ValueError, giving up.\t' +
@@ -380,4 +368,4 @@ def parse_binary_from_string(fdata, fname=None, suffix=None, okext=OKEXT,
             pass
     else:
         pass
-    return filedict
+    return prsd
