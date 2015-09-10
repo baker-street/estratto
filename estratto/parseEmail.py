@@ -263,7 +263,7 @@ def email_whole_parse_from_str(text):
     return tuple(parsedemaillist)
 
 
-def email_whole_parse(uri, text=None, returnraw=False):
+def email_whole_parse(uri, text=None, **xargs):
     """
     Parses email from file and its attachments.
     Returns attachments as both raw and plain text (if possible).
@@ -272,9 +272,4 @@ def email_whole_parse(uri, text=None, returnraw=False):
     """
     if text is None:
         text = open_to_unicode(uri)
-    emailtuple = email_whole_parse_from_str(text)
-    emailtuple[0][u'filename'] = auto_unicode_dang_it(uri)
-    if returnraw:
-        return emailtuple, text
-    else:
-        return emailtuple
+    return email_whole_parse_from_str(text)
