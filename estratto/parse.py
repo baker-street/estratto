@@ -17,12 +17,14 @@ __status__
 from os.path import dirname
 
 from magic import from_buffer
+from types import NoneType
+
 
 # TODO (steven_c) Replace smart_open!
-from smart_open import smart_open
+# TODO (steven_c) Replace smart_open!
 
 from estratto.fixEncoding import(auto_unicode_dang_it, sane_unicode)
-from estratto.parseBinary import parse_binary_from_string
+from estratto.parseBinary import parse_binary
 # from estratto.fixEncoding import make_unicode_dang_it
 from estratto.parseEmail import(is_an_email,
                                 email_whole_parse)
@@ -39,8 +41,8 @@ def get_file_info_from_buffer(txt):  # Consider putting in utils
     return info, mime, ftype  # Consider using a namedtuple.
 
 
-def fit_into_data_mold(parsedtxt, txt, uri, ftype, mime, info):
-    return {u'content': parsedtxt,
+def fit_into_data_mold(parseddict, txt, uri, ftype, mime, info):
+    return {u'content': parseddict,
             u'rawbody': txt,
             u'filename': uri,
             u'type': ftype,
@@ -60,47 +62,48 @@ def parse_multi_layer_file(uri, txt=None, ftype=None, okext=OKEXT):
 
         type: is ether the extension or a set definition, e.g. email.
     """
+    if isinstance(txt, NoneType):
+        with open(uri) as fogj:
+            txt = fogj.read()
     if is_an_email(uri, text=txt):
-        emlparsed = []
-        parsedtxtwraw = email_whole_parse(uri,
-                                          text=txt,
-                                          returnraw=True)
-        parsedtxtlist = parsedtxtwraw[0]
-        txt = parsedtxtwraw[1]
+        parsedtxtlist = email_whole_parse(uri=uri,
+                                          text=txt)
         info, mime, ftype = get_file_info_from_buffer(txt)
         for i, parsedtxt in enumerate(parsedtxtlist):
             if i == 0:
-                emlparsed.append(fit_into_data_mold(parsedtxt=parsedtxt,
-                                                    txt=txt,
-                                                    uri=auto_unicode_dang_it(
-                                                        uri),
-                                                    ftype=u'email',
-                                                    mime=mime,
-                                                    info=info))
+                # the zero gen file does not return with a file name
+                parsedtxt['filename'] = uri
+                emlparsed = [(fit_into_data_mold(parseddict=parsedtxt,
+                                                 txt=txt,
+                                                 uri=auto_unicode_dang_it(uri),
+                                                 ftype=u'email',
+                                                 mime=mime,
+                                                 info=info))]
             else:
-                txt = parsedtxt['body']
-                info, mime, ftype = get_file_info_from_buffer(txt)
+                attchtxt = parsedtxt['body']
+                if not attchtxt:
+                    attchtxt = u''
+                info, mime, ftype = get_file_info_from_buffer(attchtxt)
                 fname = parsedtxt['filename']
                 for parsedbit in parse_multi_layer_file(uri=fname,
-                                                        txt=txt,
+                                                        txt=attchtxt,
                                                         ftype=ftype,
                                                         okext=okext):
                     emlparsed.append(parsedbit)
         return emlparsed
-    elif txt is None:
-        with smart_open(uri) as fogj:
-            txt = fogj.read()
-    parsedtxt = parse_binary_from_string(fdata=txt,
-                                         fname=uri)
-    info, mime, ftype = get_file_info_from_buffer(txt)
+    parsedtxt = parse_binary(string=txt,
+                             fname=uri)
     if not ftype:
         ftype = uri.split('.')[-1]
     if not parsedtxt:
-        parsedtxt = {u'body': u'',
-                     u'filename': sane_unicode(uri)}
-    return [fit_into_data_mold(parsedtxt,
-                               txt,
-                               uri,
-                               ftype,
+        parseddict = {u'body': u''}
+    else:
+        parseddict = {u'body': parsedtxt}
+    info, mime, ftype = get_file_info_from_buffer(txt)
+    parseddict[u'filename'] = sane_unicode(uri)
+    return [fit_into_data_mold(parseddict=parseddict,
+                               txt=txt,
+                               uri=uri,
+                               ftype=ftype,
                                mime=mime,
                                info=info)]
