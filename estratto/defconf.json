@@ -11,6 +11,8 @@
         ".pd",
         ".htm",
         ".email",
+        ".epub",
+        ".cbz",
         "."
     ],
     "email_ext_set": [
