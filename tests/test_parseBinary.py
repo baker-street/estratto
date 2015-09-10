@@ -32,50 +32,43 @@ TESTDIRLONG = 'testdata/The_Adventures_of_Sherlock_Holmes/from_libre_office/'
 def test__parse_binary__parse_doc__test_if_run_and_len_20():
     fname = join(TESTDIR, 'doc/pure_doc/pg1661-mini.doc')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) > 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) > 20)
 
 
 def test__parse_binary__parse_docx__test_if_run_and_len_20():
     fname = join(TESTDIR, 'doc/pure_doc/pg1661-mini.docx')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) > 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) > 20)
 
 
 def test__parse_binary__parse_pdf__test_if_run_and_len_20():
     fname = join(TESTDIR, 'pdf/pg1661-mini_PDF.pdf')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) >= 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) >= 20)
 
 
 def test__parse_binary__parse_pdf_FDF__test_if_run_and_len_20():
     fname = join(TESTDIR, 'pdf/pg1661-mini_FDF.pdf')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) >= 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) >= 20)
 
 
 def test__parse_binary__parse_pdf_HTML__test_if_run_and_len_20():
     fname = join(TESTDIR, 'pdf/pg1661-mini_HTML.pdf')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) >= 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) >= 20)
 
 
 def test__parse_binary__parse_pdf_XML__test_if_run_and_len_20():
     fname = join(TESTDIR, 'pdf/pg1661-mini_XML.pdf')
     prsd = parse_binary(fname=fname)
-    assert(len(prsd['body']) >= 20)
-    assert(prsd['filename'] == fname)
+    assert(len(prsd) >= 20)
 
 
 def compr_binary_parse_on_files(fnamelist):
     assert(len(fnamelist) >= 2)
     for i, fname in enumerate(fnamelist):
-        prsd = parse_binary(fname=fname)
-        new = prsd['body'].replace(' ', '').replace('\n', '')
+        new = parse_binary(fname=fname).replace(' ', '').replace('\n', '')
         assert(len(new) > 20)
         if i == 0:
             old = new
@@ -94,7 +87,7 @@ def test__parse_binary__compare_docs__doc_docx_OpenOfficXML():
     compr_binary_parse_on_files(fnamelist)
 
 
-def test__parse_binary__compare_docs__doc_docx_OpenOfficXML():
+def test__parse_binary__compare_docs__doc_docx():
     fnamelist = list(spelunker_gen(join(TESTDIR, 'doc/pure_doc')))
     compr_binary_parse_on_files(fnamelist)
 
