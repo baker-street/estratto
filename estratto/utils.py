@@ -167,6 +167,10 @@ def flatten_handle_all(datastrct, dictvalues=False):
                                               dictvalues=dictvalues):
             yield i
 
+
+def flatten_all(*datastrcts, **xargs):
+    return flatten_handle_all(datastrct=datastrcts, **xargs)
+
 # ------------------------------------------------------------------------------
 # Time Zone Normalization Functions.
 NA_TIME_ZONE_ABRVS = {u'EDT': u'-0400',
