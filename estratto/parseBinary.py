@@ -194,7 +194,8 @@ def handle_pdf_files_pdfminer(filepath):
 
 def handle_ebook_files(filepath):
     try:
-        cmd = ['mudraw', '-F', 'text', filepath]
+        # cmd = ['mudraw', '-F', 'text', filepath]
+        cmd = ['mudraw', '-t', filepath]
         p = Popen(cmd, stdout=PIPE, stderr=DEVNULL)
         stdout, stderr = p.communicate()
         return stdout
