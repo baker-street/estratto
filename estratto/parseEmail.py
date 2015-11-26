@@ -227,7 +227,7 @@ def is_an_email_from_ext(fname, extset=EMAILEXTS):
 
     Extensions in extset, should be lower case.
     """
-    return fname.lower().endswith(tuple(extset))
+    return auto_unicode_dang_it(fname).lower().endswith(tuple(extset))
 
 
 def is_an_email(fname, text=None, extset=EMAILEXTS):
