@@ -58,11 +58,8 @@ def verify_unicode(text):
 
 # ----------------------------------------------------------------------------
 # Cleaning up text.
-def __fix_bad_escapes(text):
+def __fix_escaped_escapes(text):
     """
-    Fixes escaped characters that for what ever reason are not implemented
-    correctly.
-
     Expects unicode text.
     """
     verify_unicode(text)
@@ -72,13 +69,16 @@ def __fix_bad_escapes(text):
     return text
 
 
+__fix_bad_escapes = __fix_escaped_escapes
+
+
 def __replace_misc_text_bits(text):
     """
     Replaces misc parts of text that do not belong.
     ex.
         '\\r' - (had to escape the backslash) Carriage returns that do not
                 belong in everyday text (at least not on Linux), common in text
-                comming from Windows.
+                coming from Windows.
 
     Expects unicode text.
     """
